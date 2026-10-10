@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Eye,
   ShoppingBag,
+  Save,
 } from 'lucide-react';
 import { Pattern } from '@/lib/types';
 import { uploadImageToSupabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -31,6 +32,7 @@ export default function AdminDashboard() {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [isLoadingPatterns, setIsLoadingPatterns] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Add / Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -135,6 +137,11 @@ export default function AdminDashboard() {
     } catch {
       setIsAuthenticated(false);
     }
+  };
+
+  const handleDashboardSave = () => {
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3500);
   };
 
   const handleTitleChange = (val: string) => {
@@ -244,6 +251,7 @@ export default function AdminDashboard() {
       if (res.ok && (data.success || data.pattern)) {
         setIsModalOpen(false);
         fetchPatterns();
+        handleDashboardSave();
       } else {
         setFormError(data.error || 'Failed to save pattern.');
       }
@@ -265,6 +273,7 @@ export default function AdminDashboard() {
       if (res.ok) {
         setDeletingPattern(null);
         fetchPatterns();
+        handleDashboardSave();
       }
     } catch (err) {
       console.error('Delete failed:', err);
@@ -283,6 +292,7 @@ export default function AdminDashboard() {
       });
       if (res.ok) {
         fetchPatterns();
+        handleDashboardSave();
       }
     } catch (err) {
       console.error('Reset failed:', err);
@@ -324,7 +334,7 @@ export default function AdminDashboard() {
     );
   }
 
-  // Secret Key Login Gate
+  // Secret Key Login Gate (Passcode hint removed)
   if (!isAuthenticated) {
     return (
       <div className="py-20 px-4 max-w-sm mx-auto">
@@ -373,10 +383,6 @@ export default function AdminDashboard() {
               )}
             </button>
           </form>
-
-          <div className="mt-6 pt-4 border-t border-stone-100 text-center text-[11px] text-stone-400">
-            Passcode: <code className="text-stone-600 font-mono">crochet2025</code>
-          </div>
         </div>
       </div>
     );
@@ -385,6 +391,13 @@ export default function AdminDashboard() {
   // Authenticated Admin Dashboard
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+      {saveSuccess && (
+        <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-600" />
+          <span>All changes and new patterns have been successfully saved!</span>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <Link
@@ -402,7 +415,15 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleDashboardSave}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#49B8BE] hover:bg-[#3ea6ac] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>Save Changes</span>
+          </button>
+
           <button
             onClick={openCreateModal}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#E65F43] hover:bg-[#c94934] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
