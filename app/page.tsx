@@ -2,7 +2,8 @@ import HomeClient from '@/components/HomeClient';
 import Footer from '@/components/Footer';
 import { getAllPatterns } from '@/lib/storage';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function HomePage() {
   const patterns = await getAllPatterns(true);
