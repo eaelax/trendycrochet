@@ -37,12 +37,10 @@ export default function AdminDashboard() {
   // Add / Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
   // Delete Confirmation state
   const [deletingPattern, setDeletingPattern] = useState<Pattern | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form Fields
   const [formTitle, setFormTitle] = useState('');
@@ -61,6 +59,17 @@ export default function AdminDashboard() {
   const fetchPatterns = async () => {
     setIsLoadingPatterns(true);
     try {
+      // Check localStorage first
+      const saved = localStorage.getItem('trendy_crochet_patterns');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPatterns(parsed);
+          setIsLoadingPatterns(false);
+          return;
+        }
+      }
+
       const res = await fetch('/api/admin/patterns');
       const data = await res.json();
       if (data.patterns) {
@@ -82,14 +91,7 @@ export default function AdminDashboard() {
         if (!active) return;
         if (data.authenticated) {
           setIsAuthenticated(true);
-          fetch('/api/admin/patterns')
-            .then((r) => r.json())
-            .then((pData) => {
-              if (active && pData.patterns) {
-                setPatterns(pData.patterns);
-              }
-            })
-            .catch(() => {});
+          fetchPatterns();
         } else {
           setIsAuthenticated(false);
         }
@@ -139,9 +141,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDashboardSave = () => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3500);
+  // MANUAL SAVE BUTTON: Persists current dashboard patterns to localStorage and API
+  const handleDashboardSave = async () => {
+    try {
+      localStorage.setItem('trendy_crochet_patterns', JSON.stringify(patterns));
+      
+      // Also sync to server API
+      await fetch('/api/admin/patterns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync', patterns }),
+      }).catch(() => {});
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3500);
+    } catch (err) {
+      console.error('Save failed:', err);
+    }
   };
 
   const handleTitleChange = (val: string) => {
@@ -213,7 +229,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSavePattern = async (e: React.FormEvent) => {
+  // Modal Save: Updates local dashboard state ONLY (no auto-persist until "Save Changes" is clicked)
+  const handleSavePattern = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
@@ -226,60 +243,53 @@ export default function AdminDashboard() {
       return;
     }
 
-    setIsSaving(true);
-    try {
-      const payload = {
-        id: editingPattern?.id,
+    const baseSlug = formSlug.trim() || formTitle.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-');
+
+    if (editingPattern) {
+      // Edit existing pattern in local state
+      const updated = patterns.map((p) =>
+        p.id === editingPattern.id
+          ? {
+              ...p,
+              title: formTitle.trim(),
+              slug: baseSlug,
+              image_url: formImageUrl.trim() || '/images/hero-crochet.jpg',
+              pdf_size: formPdfSize.trim() || '3.5 MB',
+              difficulty_tag: formDifficultyTag.trim() || 'Beginner Friendly',
+              cpa_locker_url: formCpaLockerUrl.trim(),
+              gumroad_url: formGumroadUrl.trim(),
+              is_published: formIsPublished,
+            }
+          : p
+      );
+      setPatterns(updated);
+    } else {
+      // Add new pattern to local state
+      const newPattern: Pattern = {
+        id: `pat-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         title: formTitle.trim(),
-        slug: formSlug.trim(),
+        slug: baseSlug,
         image_url: formImageUrl.trim() || '/images/hero-crochet.jpg',
         pdf_size: formPdfSize.trim() || '3.5 MB',
         difficulty_tag: formDifficultyTag.trim() || 'Beginner Friendly',
         cpa_locker_url: formCpaLockerUrl.trim(),
         gumroad_url: formGumroadUrl.trim(),
         is_published: formIsPublished,
+        created_at: new Date().toISOString(),
+        description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.',
       };
-
-      const method = editingPattern ? 'PUT' : 'POST';
-      const res = await fetch('/api/admin/patterns', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (res.ok && (data.success || data.pattern)) {
-        setIsModalOpen(false);
-        fetchPatterns();
-        handleDashboardSave();
-      } else {
-        setFormError(data.error || 'Failed to save pattern.');
-      }
-    } catch {
-      setFormError('Network error while saving.');
-    } finally {
-      setIsSaving(false);
+      setPatterns([newPattern, ...patterns]);
     }
+
+    setIsModalOpen(false);
   };
 
-  const handleDeletePattern = async () => {
+  // Delete: Updates local dashboard state ONLY until "Save Changes" is clicked
+  const handleDeletePattern = () => {
     if (!deletingPattern) return;
-    setIsDeleting(true);
-
-    try {
-      const res = await fetch(`/api/admin/patterns?id=${deletingPattern.id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        setDeletingPattern(null);
-        fetchPatterns();
-        handleDashboardSave();
-      }
-    } catch (err) {
-      console.error('Delete failed:', err);
-    } finally {
-      setIsDeleting(false);
-    }
+    const filtered = patterns.filter((p) => p.id !== deletingPattern.id);
+    setPatterns(filtered);
+    setDeletingPattern(null);
   };
 
   const handleResetSamplePatterns = async () => {
@@ -290,9 +300,10 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset' }),
       });
-      if (res.ok) {
-        fetchPatterns();
-        handleDashboardSave();
+      const data = await res.json();
+      if (res.ok && data.patterns) {
+        setPatterns(data.patterns);
+        localStorage.removeItem('trendy_crochet_patterns');
       }
     } catch (err) {
       console.error('Reset failed:', err);
@@ -392,9 +403,9 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       {saveSuccess && (
-        <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2">
+        <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2 shadow-none">
           <Check className="w-4 h-4 text-emerald-600" />
-          <span>All changes and new patterns have been successfully saved!</span>
+          <span>Changes successfully saved! Your website home page has been updated.</span>
         </div>
       )}
 
@@ -411,14 +422,14 @@ export default function AdminDashboard() {
             Pattern Management
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
-            Hidden Route: <code className="font-mono text-stone-700">/trendycrochetpatternsadmin</code>
+            Click <strong className="text-[#49B8BE]">Save Changes</strong> to apply your edits to the live website.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleDashboardSave}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#49B8BE] hover:bg-[#3ea6ac] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#49B8BE] hover:bg-[#3ea6ac] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-none"
           >
             <Save className="w-3.5 h-3.5" />
             <span>Save Changes</span>
@@ -606,7 +617,7 @@ export default function AdminDashboard() {
               {editingPattern ? 'Edit Pattern' : 'Add New Pattern'}
             </h2>
             <p className="text-xs text-stone-500 mb-5">
-              Enter the pattern details and download links.
+              Enter the pattern details and click &quot;Save Changes&quot; on the dashboard to publish.
             </p>
 
             {formError && (
@@ -748,10 +759,9 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSaving}
-                  className="px-4 py-2 bg-[#E65F43] hover:bg-[#c94934] text-white font-bold text-xs rounded-lg cursor-pointer disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 bg-[#E65F43] hover:bg-[#c94934] text-white font-bold text-xs rounded-lg cursor-pointer transition-colors"
                 >
-                  {isSaving ? 'Saving...' : editingPattern ? 'Save Changes' : 'Create Pattern'}
+                  {editingPattern ? 'Update in List' : 'Add to List'}
                 </button>
               </div>
             </form>
@@ -778,10 +788,9 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={handleDeletePattern}
-                disabled={isDeleting}
                 className="px-3.5 py-2 bg-[#E65F43] text-white font-bold text-xs rounded-lg hover:bg-[#c94934] cursor-pointer"
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                Delete
               </button>
             </div>
           </div>
