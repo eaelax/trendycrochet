@@ -12,6 +12,22 @@ interface HomeClientProps {
 
 export default function HomeClient({ initialPatterns }: HomeClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [patterns] = useState<Pattern[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('trendy_crochet_patterns');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return initialPatterns;
+  });
 
   return (
     <>
@@ -21,7 +37,7 @@ export default function HomeClient({ initialPatterns }: HomeClientProps) {
       />
 
       <PatternGrid
-        patterns={initialPatterns}
+        patterns={patterns}
         searchQuery={searchQuery}
         onResetSearch={() => setSearchQuery('')}
       />
