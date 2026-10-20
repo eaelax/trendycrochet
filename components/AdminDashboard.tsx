@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -18,6 +18,10 @@ import {
   Eye,
   ShoppingBag,
   Save,
+  Search,
+  Star,
+  FileText,
+  Sparkles,
 } from 'lucide-react';
 import { Pattern } from '@/lib/types';
 import { uploadImageToSupabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -35,6 +39,7 @@ export default function AdminDashboard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [filterQuery, setFilterQuery] = useState('');
 
   // Add / Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,37 +69,37 @@ export default function AdminDashboard() {
 
   const fetchPatterns = useCallback(async (token?: string) => {
     setIsLoadingPatterns(true);
-    const effectiveToken = token || adminToken || (typeof window !== 'undefined' ? sessionStorage.getItem('trendy_admin_token') : '') || '';
+    const effectiveToken =
+      token ||
+      adminToken ||
+      (typeof window !== 'undefined' ? sessionStorage.getItem('trendy_admin_token') : '') ||
+      '';
 
     try {
-      // 1. Fetch live patterns from backend storage
+      // 1. Check localStorage first
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('trendy_crochet_patterns');
+        if (saved !== null) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            setPatterns(parsed);
+            setIsLoadingPatterns(false);
+            return;
+          }
+        }
+      }
+
+      // 2. Fetch from backend storage
       const res = await fetch('/api/admin/patterns', {
         headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
       });
       const data = await res.json();
-      if (res.ok && data.patterns && Array.isArray(data.patterns) && data.patterns.length > 0) {
+      if (res.ok && data.patterns && Array.isArray(data.patterns)) {
         setPatterns(data.patterns);
         localStorage.setItem('trendy_crochet_patterns', JSON.stringify(data.patterns));
-        return;
-      }
-
-      // 2. Fallback to localStorage if API request fails
-      const saved = localStorage.getItem('trendy_crochet_patterns');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPatterns(parsed);
-        }
       }
     } catch (err) {
       console.error('Failed to load patterns from server:', err);
-      const saved = localStorage.getItem('trendy_crochet_patterns');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) setPatterns(parsed);
-        } catch {}
-      }
     } finally {
       setIsLoadingPatterns(false);
     }
@@ -103,7 +108,7 @@ export default function AdminDashboard() {
   // Check auth status on initial load
   useEffect(() => {
     let active = true;
-    const stored = sessionStorage.getItem('trendy_admin_token');
+    const stored = typeof window !== 'undefined' ? sessionStorage.getItem('trendy_admin_token') : null;
 
     fetch('/api/admin/auth', {
       headers: stored ? { Authorization: `Bearer ${stored}` } : {},
@@ -169,7 +174,9 @@ export default function AdminDashboard() {
     try {
       await fetch('/api/admin/auth', { method: 'DELETE' });
     } catch {}
-    sessionStorage.removeItem('trendy_admin_token');
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('trendy_admin_token');
+    }
     setIsAuthenticated(false);
     setAdminToken('');
     setPatterns([]);
@@ -179,17 +186,17 @@ export default function AdminDashboard() {
   const handleDashboardSave = async () => {
     setIsSaving(true);
     try {
-      // 1. Persist immediately to localStorage
+      // 1. Persist directly to localStorage
       localStorage.setItem('trendy_crochet_patterns', JSON.stringify(patterns));
 
-      // 2. Broadcast event across tabs/components
+      // 2. Broadcast event across client tabs/components
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('crochet_patterns_updated'));
       }
 
-      // 3. Persist to server API & storage file
+      // 3. Persist to server API storage file
       const effectiveToken = adminToken || sessionStorage.getItem('trendy_admin_token') || 'BlackCanonerEoser#15';
-      const res = await fetch('/api/admin/patterns', {
+      await fetch('/api/admin/patterns', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,16 +205,8 @@ export default function AdminDashboard() {
         body: JSON.stringify({ action: 'sync', patterns }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.patterns && Array.isArray(data.patterns)) {
-          setPatterns(data.patterns);
-          localStorage.setItem('trendy_crochet_patterns', JSON.stringify(data.patterns));
-        }
-      }
-
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 4000);
+      setTimeout(() => setSaveSuccess(false), 3500);
     } catch (err) {
       console.error('Save failed:', err);
     } finally {
@@ -290,6 +289,13 @@ export default function AdminDashboard() {
     } catch {
       setIsUploadingImage(false);
     }
+  };
+
+  const handleToggleBestSeller = (id: string) => {
+    const updated = patterns.map((p) =>
+      p.id === id ? { ...p, is_best_seller: !p.is_best_seller } : p
+    );
+    setPatterns(updated);
   };
 
   // Add / Edit Pattern Form Submission
@@ -408,6 +414,17 @@ export default function AdminDashboard() {
     }
   };
 
+  const filteredPatterns = useMemo(() => {
+    if (!filterQuery.trim()) return patterns;
+    const q = filterQuery.toLowerCase();
+    return patterns.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.slug.toLowerCase().includes(q) ||
+        p.difficulty_tag?.toLowerCase().includes(q)
+    );
+  }, [patterns, filterQuery]);
+
   if (isAuthenticated === null) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
@@ -432,7 +449,7 @@ export default function AdminDashboard() {
             Admin Authentication
           </h1>
           <p className="text-xs text-stone-500 text-center mb-6">
-            Enter your admin secret key to access the management portal.
+            Enter your admin password to access the pattern manager.
           </p>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -473,30 +490,31 @@ export default function AdminDashboard() {
     );
   }
 
-  // Authenticated Dashboard
+  // Authenticated Dashboard (No Horizontal Scroll - Fully Responsive Grid & Card Layout)
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full overflow-x-hidden">
       {saveSuccess && (
-        <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2 shadow-none">
-          <Check className="w-4 h-4 text-emerald-600" />
-          <span>All changes applied simultaneously to the website and saved!</span>
+        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shadow-xs">
+          <Check className="w-5 h-5 text-emerald-600 shrink-0" />
+          <span>All changes were successfully saved and applied to the website!</span>
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-[#2D1C17] mb-2"
+            className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-[#2D1C17] mb-1.5"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to site</span>
+            <span>Back to website</span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2D1C17]">
             Pattern Management
           </h1>
-          <p className="text-xs sm:text-sm text-stone-500 mt-0.5">
-            Manage, edit, or add patterns. Click <strong className="text-[#E65F43]">Save Changes</strong> to apply all updates to the website.
+          <p className="text-xs text-stone-500 mt-0.5">
+            Manage, edit, or remove patterns. Click <strong className="text-[#E65F43]">Save Changes</strong> to apply updates to the live site.
           </p>
         </div>
 
@@ -504,7 +522,7 @@ export default function AdminDashboard() {
           <button
             onClick={handleDashboardSave}
             disabled={isSaving}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#E5A914] hover:bg-[#d0950a] text-stone-950 text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-none disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#E5A914] hover:bg-[#d0950a] text-stone-950 text-xs sm:text-sm font-bold rounded-lg cursor-pointer transition-colors shadow-xs disabled:opacity-50"
           >
             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 stroke-[2.5]" />}
             <span>Save Changes</span>
@@ -512,7 +530,7 @@ export default function AdminDashboard() {
 
           <button
             onClick={openCreateModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-bold rounded-lg cursor-pointer transition-colors"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Add Pattern</span>
@@ -521,183 +539,198 @@ export default function AdminDashboard() {
           <button
             onClick={handleResetSamplePatterns}
             title="Reset to default sample patterns"
-            className="p-2 text-stone-500 hover:text-[#2D1C17] bg-white border border-stone-200 rounded-lg cursor-pointer"
+            className="p-2.5 text-stone-500 hover:text-[#2D1C17] bg-white border border-stone-200 rounded-lg cursor-pointer"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-4 h-4" />
           </button>
 
           <button
             onClick={handleLogout}
             title="Log out"
-            className="p-2 text-stone-500 hover:text-red-600 bg-white border border-stone-200 rounded-lg cursor-pointer"
+            className="p-2.5 text-stone-500 hover:text-red-600 bg-white border border-stone-200 rounded-lg cursor-pointer"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Pattern List Table */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-xs">
-        <div className="px-5 py-3 border-b border-stone-200 bg-stone-50/50 flex items-center justify-between">
-          <span className="font-bold text-xs text-[#2D1C17]">
-            Active Patterns ({patterns.length})
-          </span>
+      {/* Search and Summary Bar */}
+      <div className="bg-white border border-stone-200 rounded-xl p-3 sm:p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <input
+            type="text"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="Search patterns by title or tag..."
+            className="w-full pl-9 pr-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-900 focus:outline-none focus:border-[#E65F43]"
+          />
         </div>
+        <div className="text-xs text-stone-500 font-medium">
+          Showing <span className="font-bold text-stone-900">{filteredPatterns.length}</span> of {patterns.length} patterns
+        </div>
+      </div>
 
-        {isLoadingPatterns ? (
-          <div className="p-10 text-center text-xs text-stone-500 flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-[#E65F43]" />
-            <span>Loading patterns...</span>
-          </div>
-        ) : patterns.length === 0 ? (
-          <div className="p-10 text-center text-xs text-stone-500">
-            No patterns currently found.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-[#2D1C17]">
-              <thead className="bg-stone-50 border-b border-stone-200 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
-                <tr>
-                  <th className="py-3 px-4">Pattern</th>
-                  <th className="py-3 px-4">Rating & Reviews</th>
-                  <th className="py-3 px-4">PDF Size</th>
-                  <th className="py-3 px-4">Difficulty Tag</th>
-                  <th className="py-3 px-4">CPA & Gumroad Links</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-100">
-                {patterns.map((pattern) => (
-                  <tr key={pattern.id} className="bg-white hover:bg-stone-50/60 transition-colors">
-                    {/* Pattern title & image */}
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-10 h-10 rounded-md overflow-hidden bg-stone-100 border border-stone-200 shrink-0">
-                          <Image
-                            src={pattern.image_url || 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80'}
-                            alt={pattern.title}
-                            fill
-                            className="object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <Link
-                            href={`/${pattern.slug}`}
-                            target="_blank"
-                            className="font-bold text-[#2D1C17] truncate block max-w-xs hover:underline"
-                          >
-                            {pattern.title}
-                          </Link>
-                          <span className="text-[11px] text-stone-400 font-mono truncate block">
-                            /{pattern.slug}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
+      {/* Pattern Cards List - No Horizontal Scrolling */}
+      {isLoadingPatterns ? (
+        <div className="p-16 text-center text-xs text-stone-500 flex items-center justify-center gap-2 bg-white rounded-xl border border-stone-200">
+          <RefreshCw className="w-4 h-4 animate-spin text-[#E65F43]" />
+          <span>Loading patterns...</span>
+        </div>
+      ) : filteredPatterns.length === 0 ? (
+        <div className="p-16 text-center text-xs text-stone-500 bg-white rounded-xl border border-stone-200">
+          No patterns found matching your query.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredPatterns.map((pattern) => (
+            <div
+              key={pattern.id}
+              className="bg-white rounded-xl border border-stone-200 p-4 shadow-xs flex flex-col justify-between hover:border-stone-300 transition-colors"
+            >
+              <div>
+                {/* Top Row: Thumbnail + Title + Status */}
+                <div className="flex gap-3.5 items-start mb-3">
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-stone-100 border border-stone-200 shrink-0">
+                    <Image
+                      src={pattern.image_url || 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80'}
+                      alt={pattern.title}
+                      fill
+                      className="object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
 
-                    {/* Rating & Reviews */}
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5 font-medium text-xs text-stone-800">
-                        <span className="text-amber-500 text-sm">★</span>
-                        <span>{pattern.rating ?? 5.0}</span>
-                        <span className="text-stone-400 font-normal">({pattern.reviews_count ?? 128})</span>
-                      </div>
-                    </td>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link
+                        href={`/${pattern.slug}`}
+                        target="_blank"
+                        className="font-bold text-sm text-[#2D1C17] hover:text-[#E65F43] truncate block"
+                      >
+                        {pattern.title}
+                      </Link>
+                    </div>
 
-                    {/* PDF Size */}
-                    <td className="py-3 px-4 font-mono text-stone-600 font-medium">
-                      {pattern.pdf_size || '3.5 MB'}
-                    </td>
+                    <div className="text-[11px] text-stone-400 font-mono truncate mb-1">
+                      /{pattern.slug}
+                    </div>
 
-                    {/* Difficulty Tag */}
-                    <td className="py-3 px-4">
-                      <span className="bg-[#BF8CE3]/20 text-[#7D3EAB] font-bold text-xs px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                    {/* Tags row */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="bg-[#BF8CE3]/20 text-[#7D3EAB] font-bold text-[10px] px-2 py-0.5 rounded-full">
                         {pattern.difficulty_tag || 'Beginner Friendly'}
                       </span>
-                    </td>
+                      <span className="bg-stone-100 text-stone-700 font-mono text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <FileText className="w-3 h-3 text-stone-500" />
+                        <span>{pattern.pdf_size || '3.5 MB'}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleBestSeller(pattern.id)}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full cursor-pointer transition-colors flex items-center gap-1 ${
+                          pattern.is_best_seller
+                            ? 'bg-[#E65F43] text-white'
+                            : 'bg-stone-100 text-stone-400 hover:text-stone-700'
+                        }`}
+                        title="Click to toggle Best Seller status"
+                      >
+                        <Sparkles className="w-2.5 h-2.5" />
+                        <span>{pattern.is_best_seller ? 'Best Seller' : 'Not Best Seller'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-                    {/* CPA & Gumroad URLs */}
-                    <td className="py-3 px-4 max-w-xs space-y-1">
-                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-stone-500">
-                        <span className="truncate">CPA: {pattern.cpa_locker_url}</span>
-                        <a
-                          href={pattern.cpa_locker_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="Test CPA link"
-                          className="text-stone-400 hover:text-[#E65F43] shrink-0"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                      {pattern.gumroad_url && (
-                        <div className="flex items-center gap-1 font-mono text-[10px] text-stone-500">
-                          <ShoppingBag className="w-2.5 h-2.5 text-[#2D1C17]" />
-                          <span className="truncate text-stone-600">{pattern.gumroad_url}</span>
-                        </div>
-                      )}
-                    </td>
+                {/* Rating & Reviews + CPA URL */}
+                <div className="bg-stone-50 rounded-lg p-2.5 text-xs space-y-1 mb-3">
+                  <div className="flex items-center justify-between text-stone-600">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      <span className="font-semibold text-stone-900">{pattern.rating ?? 5.0}</span>
+                      <span className="text-stone-400">({pattern.reviews_count ?? 128} reviews)</span>
+                    </div>
+                    {pattern.gumroad_url && (
+                      <span className="text-emerald-700 font-medium text-[11px] flex items-center gap-1">
+                        <ShoppingBag className="w-3 h-3" />
+                        <span>$2.00 Option</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-stone-500 font-mono">
+                    <span className="font-semibold text-stone-600">CPA:</span>
+                    <span className="truncate flex-1">{pattern.cpa_locker_url}</span>
+                    <a
+                      href={pattern.cpa_locker_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#E65F43] hover:underline shrink-0"
+                      title="Open CPA Locker"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              </div>
 
-                    {/* Actions */}
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => copyPinterestLink(pattern)}
-                          title="Copy Pinterest Pin link"
-                          className="px-2 py-1 text-[11px] font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded transition-colors inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          {copiedId === pattern.id ? (
-                            <>
-                              <Check className="w-3 h-3 text-emerald-600" />
-                              <span>Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Pin className="w-3 h-3 text-stone-400" />
-                              <span>Pin Link</span>
-                            </>
-                          )}
-                        </button>
+              {/* Action Buttons Row */}
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-100">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => copyPinterestLink(pattern)}
+                    className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    {copiedId === pattern.id ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-600" />
+                        <span>Copied Pin</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pin className="w-3 h-3 text-stone-400" />
+                        <span>Pin Link</span>
+                      </>
+                    )}
+                  </button>
 
-                        <Link
-                          href={`/${pattern.slug}`}
-                          target="_blank"
-                          title="Preview"
-                          className="p-1 text-stone-400 hover:text-stone-700"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </Link>
+                  <Link
+                    href={`/${pattern.slug}`}
+                    target="_blank"
+                    className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors"
+                    title="Preview on website"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Link>
+                </div>
 
-                        <button
-                          onClick={() => openEditModal(pattern)}
-                          title="Edit"
-                          className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openEditModal(pattern)}
+                    className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </button>
 
-                        <button
-                          onClick={() => setDeletingPattern(pattern)}
-                          title="Delete"
-                          className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                  <button
+                    onClick={() => setDeletingPattern(pattern)}
+                    className="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Delete pattern"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* FORM MODAL: Add / Edit Pattern */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-xl border border-stone-200 max-w-lg w-full p-6 my-8 relative shadow-lg">
+          <div className="bg-white rounded-xl border border-stone-200 max-w-lg w-full p-6 my-8 relative shadow-xl">
             <h2 className="text-lg font-bold text-[#2D1C17] mb-1">
               {editingPattern ? 'Edit Pattern Details' : 'Add New Pattern'}
             </h2>
