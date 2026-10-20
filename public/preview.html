@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trendy Crochet Patterns — Modern Handcrafted Crochet Guides</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Rubik -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
+  <!-- React & Babel for zero-build desktop preview -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      font-family: 'Rubik', system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-white text-stone-900 min-h-screen flex flex-col">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const INITIAL_PATTERNS = [
+      {
+        id: 'pat-001',
+        title: 'Chunky Strawberry Statement Cardigan',
+        slug: 'chunky-strawberry-statement-cardigan',
+        image_url: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=800&q=80',
+        pdf_size: '4.8 MB',
+        difficulty_tag: 'Beginner Friendly',
+        cpa_locker_url: 'https://cpatracking.co/locker/strawberry-cardigan',
+        gumroad_url: 'https://gumroad.com/l/strawberry-cardigan-pattern',
+        is_hot: true,
+        is_best_seller: true,
+        is_published: true,
+        created_at: '2025-01-10T10:00:00Z',
+        description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.',
+        rating: 5.0,
+        reviews_count: 142
+      },
+      {
+        id: 'pat-002',
+        title: 'Retro Daisy Granny Square Market Tote',
+        slug: 'retro-daisy-granny-square-market-tote',
+        image_url: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80',
+        pdf_size: '3.4 MB',
+        difficulty_tag: 'Beginner Friendly',
+        cpa_locker_url: 'https://cpatracking.co/locker/daisy-granny-tote',
+        gumroad_url: 'https://gumroad.com/l/daisy-granny-tote-pattern',
+        is_hot: true,
+        is_best_seller: true,
+        is_published: true,
+        created_at: '2025-01-12T14:30:00Z',
+        description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.',
+        rating: 5.0,
+        reviews_count: 128
+      },
+      {
+        id: 'pat-003',
+        title: 'Toadstool Mushroom Cottagecore Bucket Hat',
+        slug: 'toadstool-mushroom-cottagecore-bucket-hat',
+        image_url: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=800&q=80',
+        pdf_size: '2.9 MB',
+        difficulty_tag: 'Beginner Friendly',
+        cpa_locker_url: 'https://cpatracking.co/locker/toadstool-mushroom-hat',
+        gumroad_url: 'https://gumroad.com/l/mushroom-bucket-hat-pattern',
+        is_hot: true,
+        is_best_seller: true,
+        is_published: true,
+        created_at: '2025-01-14T09:15:00Z',
+        description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.',
+        rating: 4.9,
+        reviews_count: 96
+      },
+      {
+        id: 'pat-004',
+        title: 'Modern Checkered Mug Rugs & Coasters',
+        slug: 'modern-checkered-mug-rugs-and-coasters',
+        image_url: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80',
+        pdf_size: '2.1 MB',
+        difficulty_tag: 'Beginner Friendly',
+        cpa_locker_url: 'https://cpatracking.co/locker/checkered-mug-rug',
+        gumroad_url: 'https://gumroad.com/l/checkered-mug-rug-pattern',
+        is_hot: false,
+        is_best_seller: false,
+        is_published: true,
+        created_at: '2025-01-16T11:00:00Z',
+        description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.',
+        rating: 5.0,
+        reviews_count: 84
+      },
+      {
+        id: 'pat-005',
+        title: 'Coquette Ribbon-Tie Halter Top',
+        slug: 'coquette-ribbon-tie-halter-top',
+        image_url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
+        pdf_size: '3.8 MB',
+        difficulty_tag: 'Intermediate',
+        cpa_locker_url: 'https://cpatracking.co/locker/coquette-halter-top',
+        gumroad_url: 'https://gumroad.com/l/coquette-halter-top-pattern',
+        is_hot: false,
+        is_best_seller: false,
+        is_published: true,
+        created_at: '2025-01-18T16:45:00Z',
+        description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.',
+        rating: 4.8,
+        reviews_count: 67
+      },
+      {
+        id: 'pat-006',
+        title: 'Vintage Sunset Ripple Throw Blanket',
+        slug: 'vintage-sunset-ripple-throw-blanket',
+        image_url: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=800&q=80',
+        pdf_size: '5.2 MB',
+        difficulty_tag: 'Beginner Friendly',
+        cpa_locker_url: 'https://cpatracking.co/locker/sunset-ripple-throw',
+        gumroad_url: 'https://gumroad.com/l/sunset-ripple-throw-pattern',
+        is_hot: false,
+        is_best_seller: true,
+        is_published: true,
+        created_at: '2025-01-20T12:00:00Z',
+        description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.',
+        rating: 5.0,
+        reviews_count: 112
+      },
+      {
+        id: 'pat-007',
+        title: 'Pastel Sleepy Boba Bear Plushie',
+        slug: 'pastel-sleepy-boba-bear-plushie',
+        image_url: 'https://images.unsplash.com/photo-1558679908-541bcf1249ff?auto=format&fit=crop&w=800&q=80',
+        pdf_size: '3.1 MB',
+        difficulty_tag: 'Beginner Friendly',
+        cpa_locker_url: 'https://cpatracking.co/locker/sleepy-boba-bear',
+        gumroad_url: 'https://gumroad.com/l/sleepy-boba-bear-pattern',
+        is_hot: true,
+        is_best_seller: true,
+        is_published: true,
+        created_at: '2025-01-22T08:30:00Z',
+        description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.',
+        rating: 5.0,
+        reviews_count: 153
+      },
+      {
+        id: 'pat-008',
+        title: 'Boho Linen Hair Bandana Kerchief',
+        slug: 'boho-linen-hair-bandana-kerchief',
+        image_url: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?auto=format&fit=crop&w=800&q=80',
+        pdf_size: '2.4 MB',
+        difficulty_tag: 'Easy',
+        cpa_locker_url: 'https://cpatracking.co/locker/boho-bandana-kerchief',
+        gumroad_url: 'https://gumroad.com/l/boho-bandana-kerchief-pattern',
+        is_hot: false,
+        is_best_seller: false,
+        is_published: true,
+        created_at: '2025-01-24T15:20:00Z',
+        description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.',
+        rating: 4.9,
+        reviews_count: 78
+      }
+    ];
+
+    function App() {
+      const [patterns, setPatterns] = useState(() => {
+        try {
+          const saved = localStorage.getItem('trendy_crochet_patterns');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch(e) {}
+        return INITIAL_PATTERNS;
+      });
+
+      const [currentView, setCurrentView] = useState('home'); // 'home', 'best-sellers', 'detail', 'admin'
+      const [selectedSlug, setSelectedSlug] = useState('');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+      const [adminKey, setAdminKey] = useState('');
+      const [adminError, setAdminError] = useState('');
+      const [copiedId, setCopiedId] = useState(null);
+      const [showModal, setShowModal] = useState(false);
+      const [editingPattern, setEditingPattern] = useState(null);
+      const [saveNotice, setSaveNotice] = useState(false);
+
+      // Form states
+      const [formTitle, setFormTitle] = useState('');
+      const [formSlug, setFormSlug] = useState('');
+      const [formImageUrl, setFormImageUrl] = useState('');
+      const [formPdfSize, setFormPdfSize] = useState('3.8 MB');
+      const [formDifficultyTag, setFormDifficultyTag] = useState('Beginner Friendly');
+      const [formCpaLockerUrl, setFormCpaLockerUrl] = useState('');
+      const [formGumroadUrl, setFormGumroadUrl] = useState('');
+      const [formIsBestSeller, setFormIsBestSeller] = useState(false);
+      const [formRating, setFormRating] = useState(5.0);
+      const [formReviewsCount, setFormReviewsCount] = useState(128);
+
+      const activePattern = useMemo(() => {
+        return patterns.find(p => p.slug === selectedSlug) || patterns[0];
+      }, [patterns, selectedSlug]);
+
+      const filteredPatterns = useMemo(() => {
+        let list = currentView === 'best-sellers' ? patterns.filter(p => p.is_best_seller) : patterns;
+        if (!searchQuery.trim()) return list;
+        const q = searchQuery.toLowerCase();
+        return list.filter(p =>
+          p.title.toLowerCase().includes(q) ||
+          p.difficulty_tag?.toLowerCase().includes(q) ||
+          p.pdf_size?.toLowerCase().includes(q)
+        );
+      }, [patterns, currentView, searchQuery]);
+
+      const openDetail = (slug) => {
+        setSelectedSlug(slug);
+        setCurrentView('detail');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      const handleAdminLogin = (e) => {
+        e.preventDefault();
+        if (adminKey.trim() === 'BlackCanonerEoser#15') {
+          setIsAdminAuthenticated(true);
+          setAdminError('');
+        } else {
+          setAdminError('Invalid admin secret key.');
+        }
+      };
+
+      const handleSavePatterns = () => {
+        localStorage.setItem('trendy_crochet_patterns', JSON.stringify(patterns));
+        setSaveNotice(true);
+        setTimeout(() => setSaveNotice(false), 3000);
+      };
+
+      const openCreateModal = () => {
+        setEditingPattern(null);
+        setFormTitle('');
+        setFormSlug('');
+        setFormImageUrl('https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80');
+        setFormPdfSize('3.8 MB');
+        setFormDifficultyTag('Beginner Friendly');
+        setFormCpaLockerUrl('https://cpatracking.co/locker/pattern-download');
+        setFormGumroadUrl('');
+        setFormIsBestSeller(false);
+        setFormRating(5.0);
+        setFormReviewsCount(128);
+        setShowModal(true);
+      };
+
+      const openEditModal = (p) => {
+        setEditingPattern(p);
+        setFormTitle(p.title);
+        setFormSlug(p.slug);
+        setFormImageUrl(p.image_url);
+        setFormPdfSize(p.pdf_size || '3.5 MB');
+        setFormDifficultyTag(p.difficulty_tag || 'Beginner Friendly');
+        setFormCpaLockerUrl(p.cpa_locker_url || '');
+        setFormGumroadUrl(p.gumroad_url || '');
+        setFormIsBestSeller(Boolean(p.is_best_seller));
+        setFormRating(p.rating || 5.0);
+        setFormReviewsCount(p.reviews_count || 128);
+        setShowModal(true);
+      };
+
+      const handleFormSubmit = (e) => {
+        e.preventDefault();
+        const baseSlug = formSlug.trim() || formTitle.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-');
+        if (editingPattern) {
+          const updated = patterns.map(p => p.id === editingPattern.id ? {
+            ...p,
+            title: formTitle.trim(),
+            slug: baseSlug,
+            image_url: formImageUrl.trim(),
+            pdf_size: formPdfSize.trim(),
+            difficulty_tag: formDifficultyTag.trim(),
+            cpa_locker_url: formCpaLockerUrl.trim(),
+            gumroad_url: formGumroadUrl.trim(),
+            is_best_seller: formIsBestSeller,
+            rating: Number(formRating),
+            reviews_count: Number(formReviewsCount),
+          } : p);
+          setPatterns(updated);
+        } else {
+          const newPat = {
+            id: `pat-${Date.now()}`,
+            title: formTitle.trim(),
+            slug: baseSlug,
+            image_url: formImageUrl.trim(),
+            pdf_size: formPdfSize.trim(),
+            difficulty_tag: formDifficultyTag.trim(),
+            cpa_locker_url: formCpaLockerUrl.trim(),
+            gumroad_url: formGumroadUrl.trim(),
+            is_best_seller: formIsBestSeller,
+            rating: Number(formRating),
+            reviews_count: Number(formReviewsCount),
+            is_published: true,
+            created_at: new Date().toISOString(),
+            description: 'Download the full printable PDF pattern with stitch count and step-by-step instructions.'
+          };
+          setPatterns([newPat, ...patterns]);
+        }
+        setShowModal(false);
+      };
+
+      const handleDelete = (id) => {
+        if (confirm('Delete this pattern?')) {
+          setPatterns(patterns.filter(p => p.id !== id));
+        }
+      };
+
+      const handleResetSample = () => {
+        if (confirm('Reset to initial sample patterns?')) {
+          setPatterns(INITIAL_PATTERNS);
+          localStorage.removeItem('trendy_crochet_patterns');
+        }
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col bg-white">
+          {/* Announcement Bar */}
+          <div className="w-full bg-[#EBE7DF] text-stone-800 py-1.5 px-4 text-center text-xs font-medium tracking-wide">
+            100% Free Instant Downloads · Verified Printable PDF Guides
+          </div>
+
+          {/* Navigation Bar */}
+          <header className="w-full bg-white sticky top-0 z-40 border-b border-stone-100">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+              {/* Mobile View: Website title in one line and under it the 4 navbar buttons */}
+              <div className="flex flex-col items-center py-2.5 sm:hidden">
+                <button
+                  onClick={() => { setCurrentView('home'); setSearchQuery(''); }}
+                  className="text-base font-extrabold tracking-[0.18em] uppercase text-stone-900 select-none cursor-pointer whitespace-nowrap text-center"
+                >
+                  TRENDY CROCHET
+                </button>
+
+                <nav className="flex items-center justify-center gap-4 pt-2 text-[11px] text-stone-900 font-medium tracking-normal w-full">
+                  <button
+                    onClick={() => { setCurrentView('home'); setSearchQuery(''); }}
+                    className={`cursor-pointer hover:text-[#E65F43] whitespace-nowrap ${currentView === 'home' ? 'font-bold text-[#E65F43]' : ''}`}
+                  >
+                    Pattern
+                  </button>
+                  <button
+                    onClick={() => { setCurrentView('best-sellers'); setSearchQuery(''); }}
+                    className={`cursor-pointer hover:text-[#E65F43] whitespace-nowrap ${currentView === 'best-sellers' ? 'font-bold text-[#E65F43]' : ''}`}
+                  >
+                    Best sellers
+                  </button>
+                  <button
+                    onClick={() => { setCurrentView('home'); }}
+                    className="cursor-pointer hover:text-[#E65F43] whitespace-nowrap"
+                  >
+                    Latest arrivals
+                  </button>
+                  <a
+                    href="#steps"
+                    onClick={() => { if (currentView !== 'home') setCurrentView('home'); }}
+                    className="hover:text-[#E65F43] whitespace-nowrap"
+                  >
+                    How it works
+                  </a>
+                </nav>
+              </div>
+
+              {/* Desktop View (sm and up): Standard 3-column layout */}
+              <div className="hidden sm:grid sm:grid-cols-3 items-center h-20">
+                <nav className="flex items-center gap-6 text-xs text-stone-900 font-medium">
+                  <button
+                    onClick={() => { setCurrentView('home'); setSearchQuery(''); }}
+                    className={`cursor-pointer hover:text-[#E65F43] ${currentView === 'home' ? 'font-bold text-[#E65F43]' : ''}`}
+                  >
+                    Pattern
+                  </button>
+                  <button
+                    onClick={() => { setCurrentView('best-sellers'); setSearchQuery(''); }}
+                    className={`cursor-pointer hover:text-[#E65F43] ${currentView === 'best-sellers' ? 'font-bold text-[#E65F43]' : ''}`}
+                  >
+                    Best sellers
+                  </button>
+                </nav>
+
+                <div className="text-center">
+                  <button
+                    onClick={() => { setCurrentView('home'); setSearchQuery(''); }}
+                    className="text-xl md:text-2xl font-extrabold tracking-[0.2em] uppercase text-stone-900 select-none cursor-pointer whitespace-nowrap"
+                  >
+                    TRENDY CROCHET
+                  </button>
+                </div>
+
+                <nav className="flex items-center justify-end gap-6 text-xs text-stone-900 font-medium">
+                  <button
+                    onClick={() => { setCurrentView('home'); }}
+                    className="cursor-pointer hover:text-[#E65F43]"
+                  >
+                    Latest arrivals
+                  </button>
+                  <a
+                    href="#steps"
+                    onClick={() => { if (currentView !== 'home') setCurrentView('home'); }}
+                    className="hover:text-[#E65F43]"
+                  >
+                    How it works
+                  </a>
+                </nav>
+              </div>
+            </div>
+          </header>
+
+          {/* MAIN CONTENT AREA */}
+          <main className="flex-1">
+            {/* VIEW 1: HOME PAGE */}
+            {currentView === 'home' && (
+              <div>
+                {/* Hero Section */}
+                <section className="w-full pt-2 sm:pt-4 pb-8 sm:pb-10 px-3 sm:px-6 md:px-8 bg-white">
+                  <div className="max-w-7xl mx-auto">
+                    <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden h-[160px] min-h-[160px] sm:h-auto sm:min-h-[300px] md:min-h-[350px] bg-stone-900 flex items-end p-4 sm:p-10">
+                      <img
+                        src="https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=1600&q=80"
+                        alt="Crochet Art"
+                        className="absolute inset-0 w-full h-full object-cover opacity-85"
+                      />
+                      <div className="relative z-10 max-w-2xl">
+                        <span className="text-amber-300 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-0.5 sm:mb-1 block">
+                          Handcrafted Collection
+                        </span>
+                        <h1 className="text-white text-base sm:text-3xl md:text-5xl font-extrabold leading-tight">
+                          Free Modern Printable Crochet Patterns
+                        </h1>
+                        <p className="text-stone-200 text-xs sm:text-sm mt-1 hidden sm:block">
+                          Download beautifully illustrated, beginner-to-intermediate stitch guides.
+                        </p>
+                      </div>
+                      <div className="absolute bottom-6 right-6 z-10 hidden sm:block">
+                        <a
+                          href="#patterns"
+                          className="text-white text-xs sm:text-sm font-bold bg-orange-500 hover:bg-orange-600 px-5 py-2.5 rounded-full shadow-lg border border-white/30 backdrop-blur-xs transition-colors inline-flex items-center gap-2"
+                        >
+                          <span>Scroll down to view patterns ↓</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Trust Badges: compact & same-line on mobile */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-8 pt-3 sm:pt-10 pb-2 text-center">
+                      <div className="flex items-center justify-center gap-1.5 sm:flex-col sm:items-center sm:gap-0 bg-stone-50/70 sm:bg-transparent py-1.5 px-2 rounded-lg sm:p-0">
+                        <div className="text-emerald-600 text-sm sm:text-2xl sm:mb-1">🛡️</div>
+                        <h4 className="text-[11px] sm:text-sm font-semibold text-stone-900 whitespace-nowrap">100% Free access</h4>
+                      </div>
+                      <div className="flex items-center justify-center gap-1.5 sm:flex-col sm:items-center sm:gap-0 bg-stone-50/70 sm:bg-transparent py-1.5 px-2 rounded-lg sm:p-0">
+                        <div className="text-rose-500 text-sm sm:text-2xl sm:mb-1">❤️</div>
+                        <h4 className="text-[11px] sm:text-sm font-semibold text-stone-900 whitespace-nowrap">Beginner friendly</h4>
+                      </div>
+                      <div className="flex items-center justify-center gap-1.5 sm:flex-col sm:items-center sm:gap-0 bg-stone-50/70 sm:bg-transparent py-1.5 px-2 rounded-lg sm:p-0">
+                        <div className="text-amber-500 text-sm sm:text-2xl sm:mb-1">✨</div>
+                        <h4 className="text-[11px] sm:text-sm font-semibold text-stone-900 whitespace-nowrap">Tested stitch quality</h4>
+                      </div>
+                      <div className="flex items-center justify-center gap-1.5 sm:flex-col sm:items-center sm:gap-0 bg-stone-50/70 sm:bg-transparent py-1.5 px-2 rounded-lg sm:p-0">
+                        <div className="text-sky-600 text-sm sm:text-2xl sm:mb-1">🖨️</div>
+                        <h4 className="text-[11px] sm:text-sm font-semibold text-stone-900 whitespace-nowrap">Printable PDF</h4>
+                      </div>
+                    </div>
+
+                    {/* Search bar */}
+                    <div className="pt-2 max-w-md mx-auto">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search patterns (cardigan, tote bag, floral, plushie)..."
+                          className="w-full pl-5 pr-10 py-3 bg-white border-2 border-stone-300 rounded-full text-xs sm:text-sm text-stone-900 placeholder:text-stone-500 focus:outline-none focus:border-[#E65F43] shadow-xs"
+                        />
+                        {searchQuery && (
+                          <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-sm"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Pattern Grid */}
+                <div id="patterns" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-7">
+                    {filteredPatterns.map(pattern => (
+                      <div key={pattern.id} className="flex flex-col h-full bg-white p-3 sm:p-3.5 rounded-2xl border border-stone-200/70 shadow-xs relative hover:border-stone-400 transition-all">
+                        <div
+                          onClick={() => openDetail(pattern.slug)}
+                          className="block relative w-full aspect-square rounded-xl overflow-hidden bg-stone-100 cursor-pointer"
+                        >
+                          <img
+                            src={pattern.image_url}
+                            alt={pattern.title}
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                          />
+                          {pattern.is_best_seller && (
+                            <span className="absolute top-2.5 left-2.5 bg-[#E65F43] text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md shadow-sm">
+                              Best Seller
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="pt-3 flex flex-col flex-1 justify-between">
+                          <div>
+                            <h3
+                              onClick={() => openDetail(pattern.slug)}
+                              className="text-xs sm:text-sm font-semibold text-stone-900 line-clamp-1 hover:text-[#E65F43] cursor-pointer"
+                            >
+                              {pattern.title}
+                            </h3>
+
+                            <div className="text-sm font-normal text-stone-900 mt-2 mb-1 flex items-center justify-center gap-2">
+                              <span className="text-[#E65F43] bg-[#E65F43]/10 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">FREE</span>
+                              <span className="line-through text-stone-400 text-xs">$2.00</span>
+                            </div>
+
+                            <div className="flex items-center justify-center gap-1.5 text-[11px] text-stone-900 mt-1 flex-wrap">
+                              <span className="flex items-center gap-0.5 text-stone-800">
+                                <span className="text-amber-500">★</span>
+                                <span>{pattern.rating || 5}</span>
+                                <span className="text-stone-400 text-[10px]">({pattern.reviews_count || 128})</span>
+                              </span>
+                              <span className="text-stone-300">·</span>
+                              <span className="text-stone-600 font-medium">{pattern.pdf_size}</span>
+                              <span className="text-stone-300">·</span>
+                              <span className="text-emerald-700 font-medium">94 downloads</span>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 mt-1">
+                            <button
+                              onClick={() => openDetail(pattern.slug)}
+                              className="w-full py-3 px-3 bg-[#E65F43] hover:bg-[#d04e33] text-white text-xs font-bold rounded-xl text-center uppercase tracking-wider shadow-xs cursor-pointer transition-colors"
+                            >
+                              GET PATTERN NOW
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3 Step Guide */}
+                <div id="steps" className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 my-10">
+                  <div className="bg-[#F8F6F1] border border-stone-200/60 rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-center">
+                    <span className="text-xs uppercase tracking-wider text-stone-500 font-bold block mb-1">
+                      Free Printable Guides
+                    </span>
+                    <h3 className="text-2xl sm:text-3xl text-stone-900 font-extrabold mb-8">
+                      How to get your free patterns
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                      <div className="bg-white p-6 rounded-xl border border-stone-200/60 shadow-xs">
+                        <span className="text-2xl font-bold text-stone-900 block mb-2">01</span>
+                        <h4 className="text-sm font-semibold text-stone-900 mb-1">Select Your Pattern</h4>
+                        <p className="text-xs text-stone-500">Choose any framed design from our gallery and click &ldquo;Get Pattern Now&rdquo;.</p>
+                      </div>
+                      <div className="bg-white p-6 rounded-xl border border-stone-200/60 shadow-xs">
+                        <span className="text-2xl font-bold text-stone-900 block mb-2">02</span>
+                        <h4 className="text-sm font-semibold text-stone-900 mb-1">Quick 30-Sec Verification</h4>
+                        <p className="text-xs text-stone-500">Complete a brief, free sponsor task to instantly unlock your secure PDF download access.</p>
+                      </div>
+                      <div className="bg-white p-6 rounded-xl border border-stone-200/60 shadow-xs">
+                        <span className="text-2xl font-bold text-stone-900 block mb-2">03</span>
+                        <h4 className="text-sm font-semibold text-stone-900 mb-1">Instant PDF Download</h4>
+                        <p className="text-xs text-stone-500">Your full pattern PDF guide downloads directly to your device ready to print.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 2: BEST SELLERS */}
+            {currentView === 'best-sellers' && (
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-10">
+                <div className="mb-8 text-center">
+                  <span className="text-xs uppercase tracking-widest text-[#E65F43] font-bold block mb-2">
+                    Curated Collection
+                  </span>
+                  <h1 className="text-3xl sm:text-5xl font-extrabold text-stone-900 mb-3">
+                    Best Sellers
+                  </h1>
+                  <p className="text-xs sm:text-sm text-stone-700 max-w-lg mx-auto font-medium">
+                    Explore our community-favorite crochet patterns with top-rated printable PDF guides.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-7">
+                  {filteredPatterns.map(pattern => (
+                    <div key={pattern.id} className="flex flex-col h-full bg-white p-3 sm:p-3.5 rounded-2xl border border-stone-200/70 shadow-xs relative hover:border-stone-400 transition-all">
+                      <div
+                        onClick={() => openDetail(pattern.slug)}
+                        className="block relative w-full aspect-square rounded-xl overflow-hidden bg-stone-100 cursor-pointer"
+                      >
+                        <img src={pattern.image_url} alt={pattern.title} className="w-full h-full object-cover" />
+                        <span className="absolute top-2.5 left-2.5 bg-[#E65F43] text-white text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md shadow-sm">
+                          Best Seller
+                        </span>
+                      </div>
+                      <div className="pt-3 flex flex-col flex-1 justify-between">
+                        <div>
+                          <h3 onClick={() => openDetail(pattern.slug)} className="text-xs sm:text-sm font-semibold text-stone-900 line-clamp-1 hover:text-[#E65F43] cursor-pointer">
+                            {pattern.title}
+                          </h3>
+                          <div className="text-sm font-normal text-stone-900 mt-2 mb-1 flex items-center justify-center gap-2">
+                            <span className="text-[#E65F43] bg-[#E65F43]/10 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">FREE</span>
+                            <span className="line-through text-stone-400 text-xs">$2.00</span>
+                          </div>
+                        </div>
+                        <div className="pt-3">
+                          <button
+                            onClick={() => openDetail(pattern.slug)}
+                            className="w-full py-3 px-3 bg-[#E65F43] hover:bg-[#d04e33] text-white text-xs font-bold rounded-xl text-center uppercase tracking-wider cursor-pointer"
+                          >
+                            GET PATTERN NOW
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 3: PATTERN DETAIL */}
+            {currentView === 'detail' && activePattern && (
+              <div className="px-4 py-8 max-w-5xl mx-auto">
+                <button
+                  onClick={() => setCurrentView('home')}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-[#E65F43] mb-6 cursor-pointer"
+                >
+                  ← Back to patterns
+                </button>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start">
+                  <div className="relative w-full h-[220px] sm:h-auto sm:aspect-[3/4] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 shadow-sm">
+                    <img
+                      src={activePattern.image_url}
+                      alt={activePattern.title}
+                      className="w-full h-full object-cover pointer-events-none select-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[#7D3EAB] bg-[#BF8CE3]/20 px-2.5 py-0.5 rounded-full">
+                          {activePattern.difficulty_tag || 'Beginner Friendly'}
+                        </span>
+                        <span className="text-stone-300">·</span>
+                        <span className="text-xs text-stone-600 font-medium">Printable PDF Guide</span>
+                      </div>
+
+                      <h1 className="text-3xl sm:text-4xl font-extrabold text-stone-900 leading-tight mb-3">
+                        {activePattern.title}
+                      </h1>
+
+                      <div className="flex items-center gap-2 mb-4 text-xs font-normal text-stone-900 flex-wrap">
+                        <span className="flex items-center gap-1 text-stone-800">
+                          <span className="text-amber-500 text-sm">★</span>
+                          <span className="font-semibold">{activePattern.rating || 5}</span>
+                          <span className="text-stone-500">({activePattern.reviews_count || 128} reviews)</span>
+                        </span>
+                        <span className="text-stone-300">·</span>
+                        <span className="text-stone-700 font-mono">{activePattern.pdf_size}</span>
+                        <span className="text-stone-300">·</span>
+                        <span className="text-emerald-700 font-medium">94 downloads</span>
+                      </div>
+
+                      <div className="bg-[#FAF6F0] border border-stone-200 rounded-2xl p-3.5 mb-5 text-center">
+                        <div className="flex items-center justify-center gap-2.5">
+                          <span className="text-2xl font-extrabold text-[#E65F43]">FREE</span>
+                          <span className="line-through text-stone-400 text-base">$2.00</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#F8F6F1] border border-stone-200 rounded-xl p-4 space-y-2 text-xs sm:text-sm text-stone-700 mb-5">
+                        <div className="flex justify-between items-center">
+                          <span className="text-stone-600">Format</span>
+                          <span className="font-semibold text-stone-900">High-Res Printable PDF</span>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-stone-200/60 pt-2">
+                          <span className="text-stone-600">File Size</span>
+                          <span className="font-semibold text-stone-900 font-mono">{activePattern.pdf_size}</span>
+                        </div>
+                        <div className="flex justify-between items-center border-t border-stone-200/60 pt-2">
+                          <span className="text-stone-600">Instant Access</span>
+                          <span className="font-semibold text-[#E65F43]">✓ Free Instant Unlock</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-stone-700 leading-relaxed mb-6">
+                        {activePattern.description || 'Download the full printable PDF pattern with exact stitch counts, step-by-step instructions, and photo tutorial.'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <a
+                          href={activePattern.cpa_locker_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full bg-[#222222] hover:bg-black text-white font-bold py-3.5 px-6 rounded-full text-center block text-sm tracking-wide shadow-sm cursor-pointer transition-colors"
+                        >
+                          FREE DOWNLOAD NOW
+                        </a>
+                        <p className="text-[11px] text-stone-500 text-center mt-1.5">
+                          Instant access unlocked after completing a quick 30-sec verification
+                        </p>
+                      </div>
+
+                      {activePattern.gumroad_url && (
+                        <a
+                          href={activePattern.gumroad_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full bg-[#E65F43] hover:bg-[#d04e33] text-white font-bold py-3 px-6 rounded-full text-center block text-xs sm:text-sm tracking-wide cursor-pointer transition-colors"
+                        >
+                          BUY IT NOW $2.00
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 4: ADMIN DASHBOARD */}
+            {currentView === 'admin' && (
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+                {!isAdminAuthenticated ? (
+                  <div className="py-16 px-4 max-w-sm mx-auto">
+                    <div className="bg-white rounded-xl border border-stone-200 p-8 shadow-xs text-center">
+                      <div className="w-12 h-12 rounded-full bg-[#E65F43]/10 text-[#E65F43] flex items-center justify-center mx-auto mb-4 text-xl">
+                        🔒
+                      </div>
+                      <h2 className="text-xl font-bold text-[#2D1C17] mb-1">Admin Authentication</h2>
+                      <p className="text-xs text-stone-500 mb-6">
+                        Enter secret key to manage crochet patterns (default: <code className="text-[#E65F43] font-bold">crochet2025</code>).
+                      </p>
+                      <form onSubmit={handleAdminLogin} className="space-y-4">
+                        <input
+                          type="password"
+                          value={adminKey}
+                          onChange={(e) => setAdminKey(e.target.value)}
+                          placeholder="Enter secret key..."
+                          className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-lg text-sm text-[#2D1C17] focus:outline-none focus:border-[#E65F43]"
+                          required
+                        />
+                        {adminError && (
+                          <div className="p-2 bg-red-50 text-red-600 text-xs rounded border border-red-100">
+                            {adminError}
+                          </div>
+                        )}
+                        <button
+                          type="submit"
+                          className="w-full py-2.5 bg-[#E65F43] hover:bg-[#c94934] text-white font-bold text-sm rounded-lg transition-colors cursor-pointer"
+                        >
+                          Unlock Dashboard
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {saveNotice && (
+                      <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2">
+                        ✓ Changes successfully saved to local browser storage!
+                      </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                      <div>
+                        <button
+                          onClick={() => setCurrentView('home')}
+                          className="text-xs text-stone-500 hover:text-stone-900 mb-1"
+                        >
+                          ← Back to site
+                        </button>
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2D1C17]">
+                          Pattern Management
+                        </h1>
+                        <p className="text-xs sm:text-sm text-stone-500">
+                          Click <strong className="text-amber-700">Save Changes</strong> to persist edits in your local storage.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={handleSavePatterns}
+                          className="px-4 py-2.5 bg-[#E5A914] hover:bg-[#d0950a] text-stone-950 text-xs font-bold rounded-lg cursor-pointer transition-colors"
+                        >
+                          💾 Save Changes
+                        </button>
+                        <button
+                          onClick={openCreateModal}
+                          className="px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
+                        >
+                          + Add Pattern
+                        </button>
+                        <button
+                          onClick={handleResetSample}
+                          title="Reset to defaults"
+                          className="px-3 py-2.5 bg-white border border-stone-200 hover:bg-stone-50 text-xs rounded-lg cursor-pointer"
+                        >
+                          ↺ Reset
+                        </button>
+                        <button
+                          onClick={() => setIsAdminAuthenticated(false)}
+                          className="px-3 py-2.5 bg-white border border-stone-200 hover:text-red-600 text-xs rounded-lg cursor-pointer"
+                        >
+                          Log out
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Patterns Table */}
+                    <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-xs">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-[#2D1C17]">
+                          <thead className="bg-stone-50 border-b border-stone-200 text-[11px] font-bold text-stone-500 uppercase">
+                            <tr>
+                              <th className="py-3 px-4">Pattern</th>
+                              <th className="py-3 px-4">Rating</th>
+                              <th className="py-3 px-4">PDF Size</th>
+                              <th className="py-3 px-4">Difficulty</th>
+                              <th className="py-3 px-4">CPA Link</th>
+                              <th className="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-stone-100">
+                            {patterns.map(pattern => (
+                              <tr key={pattern.id} className="hover:bg-stone-50/60">
+                                <td className="py-3 px-4 flex items-center gap-3">
+                                  <img src={pattern.image_url} alt={pattern.title} className="w-10 h-10 rounded object-cover border border-stone-200" />
+                                  <div>
+                                    <div className="font-bold text-[#2D1C17]">{pattern.title}</div>
+                                    <div className="text-[10px] text-stone-400 font-mono">/{pattern.slug}</div>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">★ {pattern.rating || 5} ({pattern.reviews_count || 128})</td>
+                                <td className="py-3 px-4 font-mono">{pattern.pdf_size}</td>
+                                <td className="py-3 px-4">
+                                  <span className="bg-[#BF8CE3]/20 text-[#7D3EAB] font-bold text-[10px] px-2 py-0.5 rounded-full">
+                                    {pattern.difficulty_tag}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 font-mono text-[11px] text-stone-500 max-w-xs truncate">
+                                  {pattern.cpa_locker_url}
+                                </td>
+                                <td className="py-3 px-4 text-right space-x-1">
+                                  <button
+                                    onClick={() => openDetail(pattern.slug)}
+                                    className="p-1 text-stone-500 hover:text-stone-900 cursor-pointer"
+                                    title="View"
+                                  >
+                                    👁️
+                                  </button>
+                                  <button
+                                    onClick={() => openEditModal(pattern)}
+                                    className="p-1 text-stone-500 hover:text-stone-900 cursor-pointer"
+                                    title="Edit"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(pattern.id)}
+                                    className="p-1 text-stone-500 hover:text-red-600 cursor-pointer"
+                                    title="Delete"
+                                  >
+                                    🗑️
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* MODAL */}
+                    {showModal && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
+                        <div className="bg-white rounded-xl border border-stone-200 max-w-md w-full p-6 shadow-xl text-xs">
+                          <h2 className="text-base font-bold text-[#2D1C17] mb-1">
+                            {editingPattern ? 'Edit Pattern' : 'Add New Pattern'}
+                          </h2>
+                          <form onSubmit={handleFormSubmit} className="space-y-3 mt-4">
+                            <div>
+                              <label className="block font-semibold mb-1">Title *</label>
+                              <input
+                                type="text"
+                                value={formTitle}
+                                onChange={(e) => setFormTitle(e.target.value)}
+                                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded text-xs"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-semibold mb-1">Image URL *</label>
+                              <input
+                                type="text"
+                                value={formImageUrl}
+                                onChange={(e) => setFormImageUrl(e.target.value)}
+                                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded text-xs"
+                                required
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block font-semibold mb-1">PDF Size *</label>
+                                <input
+                                  type="text"
+                                  value={formPdfSize}
+                                  onChange={(e) => setFormPdfSize(e.target.value)}
+                                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded text-xs"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block font-semibold mb-1">Difficulty *</label>
+                                <input
+                                  type="text"
+                                  value={formDifficultyTag}
+                                  onChange={(e) => setFormDifficultyTag(e.target.value)}
+                                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded text-xs"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block font-semibold text-[#E65F43] mb-1">CPA Locker URL *</label>
+                              <input
+                                type="url"
+                                value={formCpaLockerUrl}
+                                onChange={(e) => setFormCpaLockerUrl(e.target.value)}
+                                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded text-xs font-mono"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-semibold mb-1">Gumroad URL (Optional)</label>
+                              <input
+                                type="url"
+                                value={formGumroadUrl}
+                                onChange={(e) => setFormGumroadUrl(e.target.value)}
+                                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded text-xs font-mono"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2 pt-1">
+                              <input
+                                type="checkbox"
+                                id="bs-check"
+                                checked={formIsBestSeller}
+                                onChange={(e) => setFormIsBestSeller(e.target.checked)}
+                              />
+                              <label htmlFor="bs-check" className="font-semibold cursor-pointer">Mark as Best Seller</label>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-3 border-t border-stone-100">
+                              <button
+                                type="button"
+                                onClick={() => setShowModal(false)}
+                                className="px-3 py-2 text-stone-600 hover:text-stone-900 cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                className="px-4 py-2 bg-[#E65F43] text-white font-bold rounded cursor-pointer"
+                              >
+                                Save Pattern
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+
+          {/* FOOTER */}
+          <footer className="mt-auto border-t border-stone-100 bg-white text-stone-500 text-xs py-10 text-center">
+            <div className="max-w-7xl mx-auto px-4 space-y-2">
+              <p className="text-sm font-bold tracking-[0.2em] uppercase text-stone-900">TRENDY CROCHET</p>
+              <p className="text-stone-500 text-xs max-w-md mx-auto">
+                Your source for wall-worthy, wearable crochet art patterns and instant printable PDF guides.
+              </p>
+              <p className="text-stone-400 text-[11px] pt-1">
+                © {new Date().getFullYear()} Trendy Crochet. 100% Free Instant Downloads.
+              </p>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
