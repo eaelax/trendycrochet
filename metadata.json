@@ -1,6 +1,0 @@
-{
-  "name": "Trendy Crochet Patterns",
-  "description": "CPA-monetized free crochet pattern directory with retro neo-brutal aesthetics, Pinterest-optimized sharing, and instant PDF guide lockers.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
