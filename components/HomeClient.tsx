@@ -16,15 +16,10 @@ export default function HomeClient({ initialPatterns }: HomeClientProps) {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('trendy_crochet_patterns');
-        if (saved) {
+        if (saved !== null) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const merged = initialPatterns.map(init => {
-              const found = parsed.find((p: Pattern) => p.id === init.id);
-              return found ? { ...init, ...found } : init;
-            });
-            const custom = parsed.filter((p: Pattern) => !initialPatterns.some(init => init.id === p.id));
-            return [...merged, ...custom];
+          if (Array.isArray(parsed)) {
+            return parsed;
           }
         }
       } catch {
@@ -38,15 +33,10 @@ export default function HomeClient({ initialPatterns }: HomeClientProps) {
     const syncFromStorage = () => {
       try {
         const saved = localStorage.getItem('trendy_crochet_patterns');
-        if (saved) {
+        if (saved !== null) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) {
-            const merged = initialPatterns.map(init => {
-              const found = parsed.find((p: Pattern) => p.id === init.id);
-              return found ? { ...init, ...found } : init;
-            });
-            const custom = parsed.filter((p: Pattern) => !initialPatterns.some(init => init.id === p.id));
-            setPatterns([...merged, ...custom]);
+            setPatterns(parsed);
           }
         }
       } catch {
@@ -62,7 +52,7 @@ export default function HomeClient({ initialPatterns }: HomeClientProps) {
       window.removeEventListener('storage', syncFromStorage);
       window.removeEventListener('crochet_patterns_updated', syncFromStorage);
     };
-  }, [initialPatterns]);
+  }, []);
 
   return (
     <>
