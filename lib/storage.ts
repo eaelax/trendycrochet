@@ -20,7 +20,7 @@ function ensureFileStore(): Pattern[] {
     }
     const raw = fs.readFileSync(DATA_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
+    if (Array.isArray(parsed)) {
       const normalized = parsed.map((p) => ({
         ...p,
         pdf_size: p.pdf_size || '3.5 MB',
@@ -63,22 +63,6 @@ export function generateSlug(title: string): string {
 }
 
 export async function getAllPatterns(onlyPublished = false): Promise<Pattern[]> {
-  const sb = getSupabaseClient();
-  if (sb) {
-    try {
-      let query = sb.from('patterns').select('*').order('created_at', { ascending: false });
-      if (onlyPublished) {
-        query = query.eq('is_published', true);
-      }
-      const { data, error } = await query;
-      if (!error && data && data.length > 0) {
-        return data as Pattern[];
-      }
-    } catch (err) {
-      console.warn('Supabase fetch failed, checking local:', err);
-    }
-  }
-
   const local = ensureFileStore();
   const list = onlyPublished ? local.filter((p) => p.is_published) : local;
   return [...list].sort(
@@ -87,22 +71,6 @@ export async function getAllPatterns(onlyPublished = false): Promise<Pattern[]> 
 }
 
 export async function getPatternBySlug(slug: string): Promise<Pattern | null> {
-  const sb = getSupabaseClient();
-  if (sb) {
-    try {
-      const { data, error } = await sb
-        .from('patterns')
-        .select('*')
-        .eq('slug', slug)
-        .single();
-      if (!error && data) {
-        return data as Pattern;
-      }
-    } catch (err) {
-      console.warn('Supabase fetch by slug failed, checking local:', err);
-    }
-  }
-
   const local = ensureFileStore();
   return local.find((p) => p.slug === slug) || null;
 }
@@ -137,20 +105,8 @@ export async function createPattern(input: PatternFormData): Promise<Pattern> {
     created_at: new Date().toISOString(),
   };
 
-  const sb = getSupabaseClient();
-  if (sb) {
-    try {
-      const { data, error } = await sb.from('patterns').insert(newPattern).select().single();
-      if (!error && data) {
-        saveFileStore([data as Pattern, ...currentList]);
-        return data as Pattern;
-      }
-    } catch (err) {
-      console.warn('Supabase insert failed, saving locally:', err);
-    }
-  }
-
-  saveFileStore([newPattern, ...currentList]);
+  const updatedList = [newPattern, ...currentList];
+  saveFileStore(updatedList);
   return newPattern;
 }
 
@@ -173,26 +129,8 @@ export async function updatePattern(id: string, updates: Partial<PatternFormData
     is_best_seller: updates.is_best_seller !== undefined ? Boolean(updates.is_best_seller) : existing.is_best_seller,
     rating: updates.rating !== undefined ? Number(updates.rating) : (existing.rating ?? 5),
     reviews_count: updates.reviews_count !== undefined ? Number(updates.reviews_count) : (existing.reviews_count ?? 128),
+    description: updates.description !== undefined ? updates.description.trim() : existing.description,
   };
-
-  const sb = getSupabaseClient();
-  if (sb) {
-    try {
-      const { data, error } = await sb
-        .from('patterns')
-        .update(updatedPattern)
-        .eq('id', id)
-        .select()
-        .single();
-      if (!error && data) {
-        currentList[existingIndex] = data as Pattern;
-        saveFileStore(currentList);
-        return data as Pattern;
-      }
-    } catch (err) {
-      console.warn('Supabase update failed:', err);
-    }
-  }
 
   currentList[existingIndex] = updatedPattern;
   saveFileStore(currentList);
@@ -200,15 +138,6 @@ export async function updatePattern(id: string, updates: Partial<PatternFormData
 }
 
 export async function deletePattern(id: string): Promise<boolean> {
-  const sb = getSupabaseClient();
-  if (sb) {
-    try {
-      await sb.from('patterns').delete().eq('id', id);
-    } catch (err) {
-      console.warn('Supabase delete failed:', err);
-    }
-  }
-
   const currentList = ensureFileStore();
   const filtered = currentList.filter((p) => p.id !== id);
   saveFileStore(filtered);
@@ -216,19 +145,6 @@ export async function deletePattern(id: string): Promise<boolean> {
 }
 
 export async function saveAllPatterns(patterns: Pattern[]): Promise<Pattern[]> {
-  const sb = getSupabaseClient();
-  if (sb) {
-    try {
-      const { data, error } = await sb.from('patterns').upsert(patterns, { onConflict: 'id' }).select();
-      if (!error && data) {
-        saveFileStore(patterns);
-        return patterns;
-      }
-    } catch (err) {
-      console.warn('Supabase saveAllPatterns failed, saving locally:', err);
-    }
-  }
-
   saveFileStore(patterns);
   return patterns;
 }
