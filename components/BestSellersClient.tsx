@@ -14,15 +14,10 @@ export default function BestSellersClient({ initialPatterns }: BestSellersClient
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('trendy_crochet_patterns');
-        if (saved) {
+        if (saved !== null) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const merged = initialPatterns.map(init => {
-              const found = parsed.find((p: Pattern) => p.id === init.id);
-              return found ? { ...init, ...found } : init;
-            });
-            const custom = parsed.filter((p: Pattern) => !initialPatterns.some(init => init.id === p.id));
-            return [...merged, ...custom];
+          if (Array.isArray(parsed)) {
+            return parsed;
           }
         }
       } catch {
@@ -36,15 +31,10 @@ export default function BestSellersClient({ initialPatterns }: BestSellersClient
     const syncFromStorage = () => {
       try {
         const saved = localStorage.getItem('trendy_crochet_patterns');
-        if (saved) {
+        if (saved !== null) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) {
-            const merged = initialPatterns.map(init => {
-              const found = parsed.find((p: Pattern) => p.id === init.id);
-              return found ? { ...init, ...found } : init;
-            });
-            const custom = parsed.filter((p: Pattern) => !initialPatterns.some(init => init.id === p.id));
-            setPatterns([...merged, ...custom]);
+            setPatterns(parsed);
           }
         }
       } catch {
@@ -60,7 +50,7 @@ export default function BestSellersClient({ initialPatterns }: BestSellersClient
       window.removeEventListener('storage', syncFromStorage);
       window.removeEventListener('crochet_patterns_updated', syncFromStorage);
     };
-  }, [initialPatterns]);
+  }, []);
 
   const bestSellers = patterns.filter((p) => p.is_best_seller);
 
@@ -89,7 +79,7 @@ export default function BestSellersClient({ initialPatterns }: BestSellersClient
           <p className="font-serif text-lg font-bold mb-2">No best sellers designated yet.</p>
           <p className="text-xs text-stone-600 font-bold mb-4">Mark patterns as Best Sellers in the Admin Dashboard settings.</p>
           <Link
-            href="/trendycrochetpatternsadmin"
+            href="/trendycrochetadmin"
             className="inline-block px-5 py-2.5 bg-[#E65F43] text-white text-xs font-extrabold rounded-xl shadow-xs"
           >
             Open Admin Dashboard
