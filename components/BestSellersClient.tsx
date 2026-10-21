@@ -10,23 +10,21 @@ interface BestSellersClientProps {
 }
 
 export default function BestSellersClient({ initialPatterns }: BestSellersClientProps) {
-  const [patterns, setPatterns] = useState<Pattern[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('trendy_crochet_patterns');
-        if (saved !== null) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            return parsed;
-          }
-        }
-      } catch {}
-    }
-    return initialPatterns;
-  });
+  const [patterns, setPatterns] = useState<Pattern[]>(initialPatterns);
 
   useEffect(() => {
-    // 1. Fetch live server data so other devices instantly see updates
+    // 1. Sync from localStorage after client hydration
+    try {
+      const saved = localStorage.getItem('trendy_crochet_patterns');
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPatterns(parsed);
+        }
+      }
+    } catch {}
+
+    // 2. Fetch live server data so other devices instantly see updates
     fetch('/api/patterns?t=' + Date.now())
       .then((res) => res.json())
       .then((data) => {
@@ -39,7 +37,7 @@ export default function BestSellersClient({ initialPatterns }: BestSellersClient
       })
       .catch(() => {});
 
-    // 2. Synchronize across local tabs/windows
+    // 3. Synchronize across local tabs/windows
     const syncFromStorage = () => {
       try {
         const saved = localStorage.getItem('trendy_crochet_patterns');
