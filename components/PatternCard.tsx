@@ -27,8 +27,8 @@ export default function PatternCard({ pattern }: PatternCardProps) {
   const reviewCount = pattern.reviews_count ?? 128;
 
   return (
-    <div className="flex flex-col h-full bg-white p-3 sm:p-3.5 rounded-2xl border border-stone-200/70 shadow-xs relative hover:border-stone-400 transition-all">
-      {/* 1. Square pattern image covering the whole image container */}
+    <div className="flex flex-col h-full bg-white p-3 sm:p-3.5 rounded-2xl border border-stone-200/70 shadow-xs relative">
+      {/* 1. Square pattern image covering the whole image container - zero hover effect */}
       <Link
         href={`/${pattern.slug}`}
         className="block relative w-full aspect-square rounded-xl overflow-hidden bg-stone-100"
@@ -38,7 +38,7 @@ export default function PatternCard({ pattern }: PatternCardProps) {
           alt={pattern.title}
           fill
           unoptimized
-          className="object-cover transition-transform duration-300 hover:scale-105"
+          className="object-cover"
           onError={() => setImageError(true)}
           referrerPolicy="no-referrer"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -55,7 +55,7 @@ export default function PatternCard({ pattern }: PatternCardProps) {
         <div>
           {/* Row 1: Title */}
           <Link href={`/${pattern.slug}`} className="block">
-            <h3 className="text-xs sm:text-sm font-semibold text-stone-900 line-clamp-1 hover:text-[#E65F43] transition-colors">
+            <h3 className="text-xs sm:text-sm font-semibold text-stone-900 line-clamp-1">
               {pattern.title}
             </h3>
           </Link>
@@ -99,11 +99,11 @@ export default function PatternCard({ pattern }: PatternCardProps) {
           })()}
         </div>
 
-        {/* Row 4: Dedicated DOWNLOAD Button */}
+        {/* Row 4: Dedicated DOWNLOAD Button - zero hover effect */}
         <div className="pt-3 mt-1">
           <Link
             href={`/${pattern.slug}`}
-            className="w-full py-3 px-3 bg-[#E65F43] hover:bg-[#d04e33] text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 uppercase tracking-wider shadow-xs transition-colors"
+            className="w-full py-3 px-3 bg-[#E65F43] text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 uppercase tracking-wider shadow-xs"
           >
             <Download className="w-4 h-4 stroke-[3]" />
             <span>GET PATTERN NOW</span>
