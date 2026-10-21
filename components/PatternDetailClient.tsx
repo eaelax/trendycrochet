@@ -13,13 +13,18 @@ interface PatternDetailClientProps {
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80';
 
+function cleanImageUrl(url?: string): string {
+  if (!url) return FALLBACK_IMAGE;
+  let clean = url.trim();
+  clean = clean.replace(/\[img\]/gi, '').replace(/\[\/img\]/gi, '').trim();
+  return clean || FALLBACK_IMAGE;
+}
+
 export default function PatternDetailClient({ pattern }: PatternDetailClientProps) {
   const [imageError, setImageError] = useState(false);
 
-  const displayImage = imageError
-    ? FALLBACK_IMAGE
-    : (pattern.image_url || FALLBACK_IMAGE);
-
+  const rawUrl = cleanImageUrl(pattern.image_url);
+  const displayImage = imageError ? FALLBACK_IMAGE : rawUrl;
   const reviewCount = pattern.reviews_count ?? 128;
 
   return (
@@ -28,7 +33,7 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
       <div className="mb-3 sm:mb-6">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-[#E65F43] transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to patterns</span>
@@ -43,6 +48,7 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
             src={displayImage}
             alt={pattern.title}
             fill
+            unoptimized
             priority
             className="object-cover pointer-events-none select-none"
             onError={() => setImageError(true)}
@@ -55,7 +61,7 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
         <div className="flex flex-col h-full gap-5 sm:gap-6">
           <div>
             {/* 1. Category & Difficulty Tags */}
-            <div className="flex flex-wrap items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#7D3EAB] bg-[#BF8CE3]/20 px-2.5 py-0.5 rounded-full">
                 {pattern.difficulty_tag || 'Beginner Friendly'}
               </span>
@@ -102,62 +108,56 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
               );
             })()}
 
-            {/* 4. Centered FREE & old price banner */}
-            <div className="bg-[#FAF6F0] border border-stone-200/70 rounded-2xl p-3 sm:p-3.5 mb-4 sm:mb-6 flex items-center justify-center text-center shadow-xs">
-              <div className="flex items-center justify-center gap-2.5">
-                <span className="text-xl sm:text-2xl font-extrabold text-[#E65F43] tracking-wide">FREE</span>
-                <span className="line-through text-stone-400 text-sm sm:text-base font-normal">$2.00</span>
-              </div>
-            </div>
-
-            {/* 5. Specs Box */}
-            <div className="bg-[#F8F6F1] border border-stone-200/60 rounded-xl p-3.5 sm:p-4 space-y-2 sm:space-y-2.5 text-xs sm:text-sm text-stone-700 font-normal mb-4 sm:mb-5">
-              <div className="flex justify-between items-center">
-                <span className="text-stone-600">Format</span>
-                <span className="font-semibold text-stone-900">High-Res Printable PDF</span>
-              </div>
-              <div className="flex justify-between items-center border-t border-stone-200/50 pt-2">
-                <span className="text-stone-600">File Size</span>
-                <span className="font-semibold text-stone-900 font-mono">{pattern.pdf_size}</span>
-              </div>
-              <div className="flex justify-between items-center border-t border-stone-200/50 pt-2">
-                <span className="text-stone-600">Instant Access</span>
-                <span className="font-semibold text-[#E65F43]">✓ Free Instant Unlock</span>
-              </div>
-            </div>
-
-            {/* 6. Description */}
-            <p className="text-xs sm:text-sm text-stone-700 leading-relaxed mb-5 sm:mb-6 font-normal">
+            {/* 4. Description */}
+            <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-4">
               {pattern.description ||
-                'Download the full printable PDF pattern with exact stitch counts, step-by-step instructions, and photo tutorial.'}
+                'Download the full printable PDF pattern with stitch counts, yarn recommendations, and high-resolution photo tutorials.'}
             </p>
+
+            {/* 5. Highlight Badges */}
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="bg-[#FAF9F5] border border-stone-200/60 px-3 py-1.5 rounded-lg text-stone-700 font-medium">
+                Instant PDF Delivery
+              </span>
+              <span className="bg-[#FAF9F5] border border-stone-200/60 px-3 py-1.5 rounded-lg text-stone-700 font-medium">
+                Step-by-step instructions
+              </span>
+              <span className="bg-[#FAF9F5] border border-stone-200/60 px-3 py-1.5 rounded-lg text-stone-700 font-medium">
+                Mobile &amp; Print Ready
+              </span>
+            </div>
           </div>
 
-          {/* 7. CTAs without hover effects */}
-          <div className="space-y-3 pt-1">
+          {/* CTA Box */}
+          <div className="bg-[#FAF9F5] border border-stone-200/80 rounded-2xl p-4 sm:p-6 space-y-4">
             <div>
-              <a
-                href={pattern.cpa_locker_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-[#222222] text-white font-medium py-3.5 px-6 rounded-full text-center block text-sm tracking-wide shadow-sm cursor-pointer"
-              >
-                FREE DOWNLOAD NOW
-              </a>
-              <p className="text-[11px] text-stone-600 text-center mt-1.5 font-normal">
-                Instant access unlocked after completing a quick 30-sec verification
-              </p>
+              <div className="text-xs uppercase font-extrabold tracking-widest text-[#E65F43] mb-1">
+                Free Community Access
+              </div>
+              <div className="text-xs text-stone-600">
+                Verify with our sponsor to download the complete PDF guide at no cost.
+              </div>
             </div>
 
+            <a
+              href={pattern.cpa_locker_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3.5 px-4 bg-[#E65F43] hover:bg-[#d04e33] text-white text-xs sm:text-sm font-bold rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-sm transition-colors cursor-pointer"
+            >
+              <Download className="w-4 h-4 stroke-[3]" />
+              <span>DOWNLOAD PATTERN NOW (FREE)</span>
+            </a>
+
             {pattern.gumroad_url && (
-              <div>
+              <div className="pt-2 border-t border-stone-200 text-center">
                 <a
                   href={pattern.gumroad_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full bg-[#E65F43] text-white font-bold py-3 px-6 rounded-full text-center block text-xs sm:text-sm tracking-wide cursor-pointer"
+                  className="text-stone-500 hover:text-stone-800 text-xs inline-flex items-center gap-1.5 font-medium underline"
                 >
-                  BUY IT NOW $2.00
+                  <span>Or skip verification and purchase on Gumroad ($2.00)</span>
                 </a>
               </div>
             )}
@@ -165,8 +165,8 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
         </div>
       </div>
 
-      {/* 3-Step Guide Section directly below */}
-      <div className="mt-8">
+      {/* 3-Step Guide Section beneath pattern */}
+      <div className="mt-12 sm:mt-16">
         <DownloadSteps />
       </div>
     </div>
