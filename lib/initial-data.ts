@@ -9,7 +9,7 @@ export const INITIAL_PATTERNS: Pattern[] = [
     "pdf_size": "3.8 MB",
     "difficulty_tag": "Beginner Friendly",
     "cpa_locker_url": "https://cpatracking.co/locker/amigurumi-stitch-toy",
-    "gumroad_url": "",
+    "gumroad_url": "https://google.com",
     "is_hot": true,
     "is_best_seller": true,
     "is_published": true,
