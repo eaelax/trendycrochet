@@ -8,23 +8,46 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Allow access to remote images
+  // Setting unoptimized: true allows ALL external image URLs (postimg, unsplash, imgur, etc.)
+  // to load directly without Next.js proxying or domain restrictions failing.
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'picsum.photos',
-        pathname: '/**',
+        hostname: 'i.postimg.cc',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.postimg.cc',
+      },
+      {
+        protocol: 'https',
+        hostname: 'postimg.cc',
       },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
-        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.imgur.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.imgur.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
       },
       {
         protocol: 'https',
         hostname: '*.supabase.co',
-        pathname: '/**',
       },
     ],
   },
