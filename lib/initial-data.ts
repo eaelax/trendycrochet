@@ -5,7 +5,7 @@ export const INITIAL_PATTERNS: Pattern[] = [
     "id": "pat-1792606818156-ulk2",
     "title": "Among Us Characters Crochet Pattern",
     "slug": "among-us-characters-crochet-pattern",
-    "image_url": "/public/among-us-characters-crochet-pattern.jpeg",
+    "image_url": "public/among-us-characters-crochet-pattern.jpeg",
     "pdf_size": "3.8 MB",
     "difficulty_tag": "Beginner Friendly",
     "cpa_locker_url": "https://cpatracking.co/locker/pattern-download",
