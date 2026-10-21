@@ -25,6 +25,9 @@ import {
   AlertCircle,
   ImageIcon,
   ShoppingBag,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { Pattern } from '@/lib/types';
 import { uploadImageToSupabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -53,6 +56,10 @@ export default function AdminDashboard() {
   const [filterQuery, setFilterQuery] = useState('');
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportCopied, setExportCopied] = useState(false);
+
+  // Drag and drop slide reordering state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Add / Edit Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -195,6 +202,40 @@ export default function AdminDashboard() {
     setIsAuthenticated(false);
     setAdminToken('');
     setPatterns([]);
+  };
+
+  // REORDER PATTERNS (Slide sorting)
+  const movePattern = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex || toIndex < 0 || toIndex >= patterns.length) return;
+    const updated = [...patterns];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+    setPatterns(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('trendy_crochet_patterns', JSON.stringify(updated));
+      window.dispatchEvent(new Event('crochet_patterns_updated'));
+    }
+  };
+
+  const handleMoveUp = (patternId: string) => {
+    const idx = patterns.findIndex((p) => p.id === patternId);
+    if (idx > 0) {
+      movePattern(idx, idx - 1);
+    }
+  };
+
+  const handleMoveDown = (patternId: string) => {
+    const idx = patterns.findIndex((p) => p.id === patternId);
+    if (idx !== -1 && idx < patterns.length - 1) {
+      movePattern(idx, idx + 1);
+    }
+  };
+
+  const handleMoveToTop = (patternId: string) => {
+    const idx = patterns.findIndex((p) => p.id === patternId);
+    if (idx > 0) {
+      movePattern(idx, 0);
+    }
   };
 
   // SAVE CHANGES: Persists current dashboard patterns to localStorage AND server API simultaneously
@@ -527,7 +568,7 @@ export default function AdminDashboard() {
       {saveSuccess && (
         <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shadow-xs">
           <Check className="w-5 h-5 text-emerald-600 shrink-0" />
-          <span>All changes were saved to this browser and local server!</span>
+          <span>All changes and custom pattern order were saved!</span>
         </div>
       )}
 
@@ -545,7 +586,7 @@ export default function AdminDashboard() {
             Pattern Management
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">
-            Manage, edit, or remove patterns. Click <strong className="text-[#E65F43]">Save Changes</strong> and use <strong className="text-emerald-700">Download initial-data.ts</strong> to deploy to GitHub + Vercel.
+            Slide patterns to sort display order (1st, 2nd, etc.). Click <strong className="text-[#E65F43]">Save Changes</strong> and <strong className="text-emerald-700">Download initial-data.ts</strong> to publish.
           </p>
         </div>
 
@@ -608,10 +649,10 @@ export default function AdminDashboard() {
         <div className="space-y-1">
           <div className="flex items-center gap-1.5 font-bold text-amber-900">
             <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
-            <span>Why other devices don&apos;t see changes yet (Vercel Serverless):</span>
+            <span>Pattern Sorting &amp; Multi-Device Persistence:</span>
           </div>
           <p className="text-stone-600">
-            Vercel builds your website directly from your GitHub repository. To display your new patterns to <strong>all visitors and other devices</strong>, click <strong className="text-emerald-700">Download initial-data.ts</strong>, replace the file in <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-stone-900">lib/initial-data.ts</code>, and git push to GitHub!
+            Use the <strong className="text-stone-900">⠿ grip handle</strong> to drag &amp; slide or the <strong className="text-stone-900">▲ / ▼</strong> arrow buttons to arrange which pattern appears 1st, 2nd, etc. Click <strong className="text-emerald-700">Download initial-data.ts</strong>, replace <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-stone-900">lib/initial-data.ts</code>, and git push to publish the exact order to Vercel.
           </p>
         </div>
         <button
@@ -636,10 +677,15 @@ export default function AdminDashboard() {
         </div>
         <div className="text-xs text-stone-500 font-medium">
           Showing <span className="font-bold text-stone-900">{filteredPatterns.length}</span> of {patterns.length} patterns
+          {filterQuery && (
+            <span className="text-amber-700 text-[11px] block sm:inline sm:ml-2">
+              (Clear search to drag &amp; slide order)
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Pattern Cards List - Fully Responsive without Horizontal Scrolling */}
+      {/* Pattern Cards List - Drag & Drop / Slide Reordering */}
       {isLoadingPatterns ? (
         <div className="p-16 text-center text-xs text-stone-500 flex items-center justify-center gap-2 bg-white rounded-xl border border-stone-200">
           <RefreshCw className="w-4 h-4 animate-spin text-[#E65F43]" />
@@ -653,13 +699,88 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredPatterns.map((pattern) => {
             const patternCleanImg = sanitizeImageUrl(pattern.image_url) || FALLBACK_IMAGE;
+            const actualIndex = patterns.findIndex((p) => p.id === pattern.id);
+            const isFirst = actualIndex === 0;
+            const isLast = actualIndex === patterns.length - 1;
+
             return (
               <div
                 key={pattern.id}
-                className="bg-white rounded-xl border border-stone-200 p-4 shadow-xs flex flex-col justify-between hover:border-stone-300 transition-colors"
+                draggable={!filterQuery}
+                onDragStart={() => setDraggedIndex(actualIndex)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOverIndex(actualIndex);
+                }}
+                onDragEnd={() => {
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDrop={() => {
+                  if (draggedIndex !== null && draggedIndex !== actualIndex) {
+                    movePattern(draggedIndex, actualIndex);
+                  }
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                className={`bg-white rounded-xl border p-4 shadow-xs flex flex-col justify-between transition-all select-none ${
+                  dragOverIndex === actualIndex
+                    ? 'border-[#E65F43] ring-2 ring-[#E65F43]/30 scale-[1.01]'
+                    : 'border-stone-200 hover:border-stone-300'
+                } ${draggedIndex === actualIndex ? 'opacity-40' : ''}`}
               >
                 <div>
-                  {/* Top Row: Thumbnail + Title + Status */}
+                  {/* Top Slide / Reorder Bar */}
+                  <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-stone-100 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-stone-400 hover:text-stone-700 rounded transition-colors"
+                        title="Click and drag to slide into new position"
+                      >
+                        <GripVertical className="w-4 h-4" />
+                      </span>
+                      <span className="font-bold text-stone-800 bg-stone-100 text-[11px] px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <span className="text-[#E65F43]">#{actualIndex + 1}</span>
+                        <span className="text-stone-400 font-normal">
+                          {actualIndex === 0 ? '(1st)' : actualIndex === 1 ? '(2nd)' : actualIndex === 2 ? '(3rd)' : ''}
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Quick Slide Up / Down buttons */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveUp(pattern.id)}
+                        disabled={isFirst}
+                        className="p-1 rounded text-stone-500 hover:text-stone-900 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none cursor-pointer"
+                        title="Slide Up (Move earlier)"
+                      >
+                        <ChevronUp className="w-4 h-4 stroke-[2.5]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveDown(pattern.id)}
+                        disabled={isLast}
+                        className="p-1 rounded text-stone-500 hover:text-stone-900 hover:bg-stone-100 disabled:opacity-25 disabled:pointer-events-none cursor-pointer"
+                        title="Slide Down (Move later)"
+                      >
+                        <ChevronDown className="w-4 h-4 stroke-[2.5]" />
+                      </button>
+                      {!isFirst && (
+                        <button
+                          type="button"
+                          onClick={() => handleMoveToTop(pattern.id)}
+                          className="text-[10px] font-bold text-stone-500 hover:text-[#E65F43] px-1.5 py-0.5 rounded hover:bg-stone-100 cursor-pointer ml-0.5"
+                          title="Move directly to #1 (First)"
+                        >
+                          Top
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Thumbnail + Title + Status */}
                   <div className="flex gap-3.5 items-start mb-3">
                     <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-stone-100 border border-stone-200 shrink-0">
                       <Image
@@ -804,7 +925,7 @@ export default function AdminDashboard() {
 
             <div className="space-y-3 mb-4 text-xs text-stone-600">
               <p>
-                To make your additions, edits, and deletions live for <strong>every device and visitor</strong> on Vercel:
+                To make your additions, custom pattern order, edits, and deletions live for <strong>every device and visitor</strong> on Vercel:
               </p>
               <ol className="list-decimal list-inside space-y-1.5 bg-stone-50 p-3 rounded-lg border border-stone-200 font-medium text-stone-800">
                 <li>
@@ -817,7 +938,7 @@ export default function AdminDashboard() {
                   Commit &amp; push to GitHub:
                   <div className="mt-1 bg-stone-900 text-stone-100 p-2 rounded font-mono text-[11px]">
                     git add lib/initial-data.ts<br />
-                    git commit -m &quot;Update crochet patterns&quot;<br />
+                    git commit -m &quot;Update crochet patterns order&quot;<br />
                     git push
                   </div>
                 </li>
