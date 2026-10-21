@@ -12,13 +12,18 @@ interface PatternCardProps {
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80';
 
+function cleanImageUrl(url?: string): string {
+  if (!url) return FALLBACK_IMAGE;
+  let clean = url.trim();
+  clean = clean.replace(/\[img\]/gi, '').replace(/\[\/img\]/gi, '').trim();
+  return clean || FALLBACK_IMAGE;
+}
+
 export default function PatternCard({ pattern }: PatternCardProps) {
   const [imageError, setImageError] = useState(false);
 
-  const displayImage = imageError
-    ? FALLBACK_IMAGE
-    : (pattern.image_url || FALLBACK_IMAGE);
-
+  const rawUrl = cleanImageUrl(pattern.image_url);
+  const displayImage = imageError ? FALLBACK_IMAGE : rawUrl;
   const reviewCount = pattern.reviews_count ?? 128;
 
   return (
@@ -32,6 +37,7 @@ export default function PatternCard({ pattern }: PatternCardProps) {
           src={displayImage}
           alt={pattern.title}
           fill
+          unoptimized
           className="object-cover transition-transform duration-300 hover:scale-105"
           onError={() => setImageError(true)}
           referrerPolicy="no-referrer"
