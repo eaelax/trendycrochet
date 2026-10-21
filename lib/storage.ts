@@ -87,9 +87,7 @@ export async function getAllPatterns(onlyPublished = false): Promise<Pattern[]> 
 
   const local = ensureFileStore();
   const list = onlyPublished ? local.filter((p) => p.is_published) : local;
-  return [...list].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  return list;
 }
 
 export async function getPatternBySlug(slug: string): Promise<Pattern | null> {
