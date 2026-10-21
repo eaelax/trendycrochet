@@ -17,7 +17,16 @@ function cleanImageUrl(url?: string): string {
   if (!url) return FALLBACK_IMAGE;
   let clean = url.trim();
   clean = clean.replace(/\[img\]/gi, '').replace(/\[\/img\]/gi, '').trim();
-  return clean || FALLBACK_IMAGE;
+  if (!clean) return FALLBACK_IMAGE;
+  if (/^(https?:\/\/|data:)/i.test(clean)) {
+    return clean;
+  }
+  // Convert "public/photo.jpg" or "/public/photo.jpg" to "/photo.jpg"
+  clean = clean.replace(/^\/?public\//i, '/');
+  if (!clean.startsWith('/')) {
+    clean = '/' + clean;
+  }
+  return clean;
 }
 
 export default function PatternDetailClient({ pattern }: PatternDetailClientProps) {
