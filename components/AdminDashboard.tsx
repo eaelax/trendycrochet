@@ -22,22 +22,32 @@ import {
   Copy,
   GitBranch,
   Download,
-  AlertCircle,
   ImageIcon,
   ShoppingBag,
   GripVertical,
   ChevronUp,
   ChevronDown,
+  HelpCircle,
 } from 'lucide-react';
 import { Pattern } from '@/lib/types';
 import { uploadImageToSupabase, isSupabaseConfigured } from '@/lib/supabase';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=800&q=80';
 
-function sanitizeImageUrl(url?: string): string {
+// Automatically handles "public/image.jpg", "/public/image.jpg", "image.jpg", and external URLs
+export function normalizeImageUrl(url?: string): string {
   if (!url) return '';
   let clean = url.trim();
   clean = clean.replace(/\[img\]/gi, '').replace(/\[\/img\]/gi, '').trim();
+  if (!clean) return '';
+  if (/^(https?:\/\/|data:)/i.test(clean)) {
+    return clean;
+  }
+  // Convert "public/photo.jpg" or "/public/photo.jpg" to "/photo.jpg"
+  clean = clean.replace(/^\/?public\//i, '/');
+  if (!clean.startsWith('/')) {
+    clean = '/' + clean;
+  }
   return clean;
 }
 
@@ -96,7 +106,6 @@ export default function AdminDashboard() {
       '';
 
     try {
-      // 1. Check localStorage first
       if (typeof window !== 'undefined') {
         const saved = localStorage.getItem('trendy_crochet_patterns');
         if (saved !== null) {
@@ -109,7 +118,6 @@ export default function AdminDashboard() {
         }
       }
 
-      // 2. Fetch from backend storage
       const res = await fetch('/api/admin/patterns', {
         headers: effectiveToken ? { Authorization: `Bearer ${effectiveToken}` } : {},
       });
@@ -204,7 +212,7 @@ export default function AdminDashboard() {
     setPatterns([]);
   };
 
-  // REORDER PATTERNS (Slide sorting)
+  // Reorder / Slide sorting
   const movePattern = (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex || toIndex < 0 || toIndex >= patterns.length) return;
     const updated = [...patterns];
@@ -238,17 +246,15 @@ export default function AdminDashboard() {
     }
   };
 
-  // SAVE CHANGES: Persists current dashboard patterns to localStorage AND server API simultaneously
+  // Save changes
   const handleDashboardSave = async () => {
     setIsSaving(true);
     try {
-      // 1. Persist directly to localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('trendy_crochet_patterns', JSON.stringify(patterns));
         window.dispatchEvent(new Event('crochet_patterns_updated'));
       }
 
-      // 2. Persist to server API
       const effectiveToken = adminToken || sessionStorage.getItem('trendy_admin_token') || 'BlackCanonerEoser#15';
       await fetch('/api/admin/patterns', {
         method: 'POST',
@@ -366,7 +372,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    const cleanImg = sanitizeImageUrl(formImageUrl) || FALLBACK_IMAGE;
+    const cleanImg = normalizeImageUrl(formImageUrl) || FALLBACK_IMAGE;
     const baseSlug =
       formSlug.trim() ||
       formTitle
@@ -419,7 +425,6 @@ export default function AdminDashboard() {
     setIsModalOpen(false);
   };
 
-  // Delete Pattern
   const handleDeletePattern = () => {
     if (!deletingPattern) return;
     const filtered = patterns.filter((p) => p.id !== deletingPattern.id);
@@ -428,32 +433,6 @@ export default function AdminDashboard() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('trendy_crochet_patterns', JSON.stringify(filtered));
       window.dispatchEvent(new Event('crochet_patterns_updated'));
-    }
-  };
-
-  // Reset to default sample patterns
-  const handleResetSamplePatterns = async () => {
-    if (!confirm('Reset all patterns to default sample patterns?')) return;
-    const effectiveToken = adminToken || sessionStorage.getItem('trendy_admin_token') || 'BlackCanonerEoser#15';
-    try {
-      const res = await fetch('/api/admin/patterns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${effectiveToken}`,
-        },
-        body: JSON.stringify({ action: 'reset' }),
-      });
-      const data = await res.json();
-      if (res.ok && data.patterns) {
-        setPatterns(data.patterns);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('trendy_crochet_patterns', JSON.stringify(data.patterns));
-          window.dispatchEvent(new Event('crochet_patterns_updated'));
-        }
-      }
-    } catch (err) {
-      console.error('Reset failed:', err);
     }
   };
 
@@ -564,124 +543,110 @@ export default function AdminDashboard() {
 
   // Authenticated Dashboard
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full overflow-x-hidden">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full overflow-x-hidden">
       {saveSuccess && (
-        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shadow-xs">
+        <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shadow-xs">
           <Check className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>All changes and custom pattern order were saved!</span>
         </div>
       )}
 
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
+      {/* Redesigned Simple Top Bar */}
+      <div className="bg-white border border-stone-200 rounded-2xl p-4 sm:p-5 shadow-xs mb-6">
+        {/* Navigation & User actions */}
+        <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-stone-100">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-[#2D1C17] mb-1.5"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to website</span>
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#2D1C17]">
-            Pattern Management
-          </h1>
-          <p className="text-xs text-stone-500 mt-0.5">
-            Slide patterns to sort display order (1st, 2nd, etc.). Click <strong className="text-[#E65F43]">Save Changes</strong> and <strong className="text-emerald-700">Download initial-data.ts</strong> to publish.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            onClick={handleDashboardSave}
-            disabled={isSaving}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#E5A914] hover:bg-[#d0950a] text-stone-950 text-xs sm:text-sm font-bold rounded-lg cursor-pointer transition-colors shadow-xs disabled:opacity-50"
-          >
-            {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 stroke-[2.5]" />}
-            <span>Save Changes</span>
-          </button>
-
-          <button
-            onClick={handleDownloadInitialDataFile}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-lg cursor-pointer transition-colors shadow-xs"
-            title="Download the updated initial-data.ts file to commit to GitHub"
-          >
-            <Download className="w-4 h-4 stroke-[2.5]" />
-            <span>Download initial-data.ts</span>
-          </button>
-
-          <button
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-bold rounded-lg cursor-pointer transition-colors"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add Pattern</span>
-          </button>
-
-          <button
-            onClick={() => setShowExportModal(true)}
-            title="GitHub + Vercel Deployment Guide & Code"
-            className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 text-xs sm:text-sm font-semibold rounded-lg cursor-pointer transition-colors"
-          >
-            <GitBranch className="w-4 h-4 text-stone-600" />
-            <span>GitHub Sync</span>
-          </button>
-
-          <button
-            onClick={handleResetSamplePatterns}
-            title="Reset to default sample patterns"
-            className="p-2.5 text-stone-500 hover:text-[#2D1C17] bg-white border border-stone-200 rounded-lg cursor-pointer"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={handleLogout}
-            title="Log out"
-            className="p-2.5 text-stone-500 hover:text-red-600 bg-white border border-stone-200 rounded-lg cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* GitHub + Vercel Notice Banner */}
-      <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3.5 sm:p-4 mb-6 text-xs text-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-1.5 font-bold text-amber-900">
-            <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
-            <span>Pattern Sorting &amp; Multi-Device Persistence:</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="inline-flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 font-medium cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-stone-400" />
+              <span>How to deploy to GitHub</span>
+            </button>
+            <span className="text-stone-200">|</span>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-red-600 font-medium cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log out</span>
+            </button>
           </div>
-          <p className="text-stone-600">
-            Use the <strong className="text-stone-900">⠿ grip handle</strong> to drag &amp; slide or the <strong className="text-stone-900">▲ / ▼</strong> arrow buttons to arrange which pattern appears 1st, 2nd, etc. Click <strong className="text-emerald-700">Download initial-data.ts</strong>, replace <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-stone-900">lib/initial-data.ts</code>, and git push to publish the exact order to Vercel.
-          </p>
         </div>
-        <button
-          onClick={() => setShowExportModal(true)}
-          className="px-3.5 py-2 bg-stone-900 text-white font-bold rounded-lg shrink-0 text-xs hover:bg-stone-800 cursor-pointer transition-colors"
-        >
-          View Instructions
-        </button>
-      </div>
 
-      {/* Search and Summary Bar */}
-      <div className="bg-white border border-stone-200 rounded-xl p-3 sm:p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-          <input
-            type="text"
-            value={filterQuery}
-            onChange={(e) => setFilterQuery(e.target.value)}
-            placeholder="Search patterns by title or tag..."
-            className="w-full pl-9 pr-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-900 focus:outline-none focus:border-[#E65F43]"
-          />
+        {/* Header Title + Simple Primary Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#2D1C17] flex items-center gap-2.5">
+              <span>Crochet Patterns Manager</span>
+              <span className="text-xs bg-stone-100 text-stone-700 font-semibold px-2.5 py-0.5 rounded-full border border-stone-200">
+                {patterns.length} Total
+              </span>
+            </h1>
+            <p className="text-xs text-stone-500 mt-1">
+              Drag by the <strong className="text-stone-800">⠿ grip handle</strong> to slide order, edit details, or add new patterns.
+            </p>
+          </div>
+
+          {/* Simple, Easy Primary Buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={openCreateModal}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#E65F43] hover:bg-[#d04e33] text-white text-xs sm:text-sm font-bold rounded-xl cursor-pointer transition-colors shadow-xs"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Add Pattern</span>
+            </button>
+
+            <button
+              onClick={handleDashboardSave}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-bold rounded-xl cursor-pointer transition-colors shadow-xs disabled:opacity-50"
+            >
+              {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 stroke-[2.5]" />}
+              <span>Save Changes</span>
+            </button>
+
+            <button
+              onClick={handleDownloadInitialDataFile}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold rounded-xl cursor-pointer transition-colors shadow-xs"
+              title="Download initial-data.ts to commit to GitHub"
+            >
+              <Download className="w-4 h-4 stroke-[2.5]" />
+              <span>Download File for GitHub</span>
+            </button>
+          </div>
         </div>
-        <div className="text-xs text-stone-500 font-medium">
-          Showing <span className="font-bold text-stone-900">{filteredPatterns.length}</span> of {patterns.length} patterns
-          {filterQuery && (
-            <span className="text-amber-700 text-[11px] block sm:inline sm:ml-2">
-              (Clear search to drag &amp; slide order)
-            </span>
-          )}
+
+        {/* Clean Search Bar */}
+        <div className="mt-4 pt-3.5 border-t border-stone-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+            <input
+              type="text"
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              placeholder="Search patterns by title or tag..."
+              className="w-full pl-9 pr-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-900 focus:outline-none focus:border-[#E65F43]"
+            />
+          </div>
+
+          <div className="text-xs text-stone-500 font-medium w-full sm:w-auto text-left sm:text-right">
+            Showing <strong className="text-stone-900">{filteredPatterns.length}</strong> of {patterns.length} patterns
+            {filterQuery && (
+              <span className="text-amber-700 text-[11px] ml-2">
+                (Clear search to drag &amp; slide order)
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -698,7 +663,7 @@ export default function AdminDashboard() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredPatterns.map((pattern) => {
-            const patternCleanImg = sanitizeImageUrl(pattern.image_url) || FALLBACK_IMAGE;
+            const patternCleanImg = normalizeImageUrl(pattern.image_url) || FALLBACK_IMAGE;
             const actualIndex = patterns.findIndex((p) => p.id === pattern.id);
             const isFirst = actualIndex === 0;
             const isLast = actualIndex === patterns.length - 1;
@@ -1018,17 +983,17 @@ export default function AdminDashboard() {
                 </span>
               </div>
 
-              {/* 2. Image URL with Live Preview */}
+              {/* 2. Image URL with Auto-handling and Live Preview */}
               <div>
                 <label className="block font-semibold text-stone-700 mb-1">
-                  Image URL (Direct link from PostImages, Unsplash, Imgur, etc.) *
+                  Image URL / Public filename *
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={formImageUrl}
                     onChange={(e) => setFormImageUrl(e.target.value)}
-                    placeholder="https://i.postimg.cc/7LjvP5yV/Amigurumi-Stitch-Toy-Crochet-Patern.jpg"
+                    placeholder="e.g. /stitch.jpeg or public/stitch.jpeg or https://i.postimg.cc/..."
                     className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-lg text-xs text-[#2D1C17] focus:outline-none focus:border-[#E65F43]"
                     required
                   />
@@ -1055,8 +1020,8 @@ export default function AdminDashboard() {
                     )}
                   </button>
                 </div>
-                <div className="text-[10px] text-stone-400 mt-1">
-                  Tip: On PostImages, choose &quot;Direct link&quot; (starts with <code className="text-stone-600">https://i.postimg.cc/...</code>)
+                <div className="text-[10px] text-stone-500 mt-1">
+                  💡 <strong>Tip for GitHub images:</strong> Both <code className="text-stone-800">public/image.jpeg</code> and <code className="text-stone-800">/image.jpeg</code> work automatically.
                 </div>
 
                 {/* Live Image Preview */}
@@ -1064,7 +1029,7 @@ export default function AdminDashboard() {
                   <div className="mt-2.5 p-2 bg-stone-50 rounded-lg border border-stone-200 flex items-center gap-3">
                     <div className="relative w-14 h-14 rounded-md overflow-hidden bg-stone-200 shrink-0 border border-stone-300">
                       <Image
-                        src={sanitizeImageUrl(formImageUrl)}
+                        src={normalizeImageUrl(formImageUrl)}
                         alt="Image Preview"
                         fill
                         unoptimized
@@ -1074,10 +1039,10 @@ export default function AdminDashboard() {
                     </div>
                     <div className="text-[11px] text-stone-600 min-w-0">
                       <span className="font-semibold text-stone-800 flex items-center gap-1">
-                        <ImageIcon className="w-3 h-3 text-stone-500" /> Image Preview Loaded
+                        <ImageIcon className="w-3 h-3 text-stone-500" /> Image Preview
                       </span>
                       <span className="truncate block text-stone-400 text-[10px] font-mono">
-                        {formImageUrl.trim()}
+                        Resolved path: {normalizeImageUrl(formImageUrl)}
                       </span>
                     </div>
                   </div>
@@ -1237,7 +1202,7 @@ export default function AdminDashboard() {
               Delete Pattern?
             </h3>
             <p className="text-xs text-stone-500 mb-6">
-              Are you sure you want to remove &ldquo;{deletingPattern.title}&rdquo;? Click &quot;Save Changes&quot; and &quot;Download initial-data.ts&quot; afterward to permanently update GitHub + Vercel for all devices.
+              Are you sure you want to remove &ldquo;{deletingPattern.title}&rdquo;? Click &quot;Save Changes&quot; and &quot;Download File for GitHub&quot; afterward to permanently update GitHub + Vercel for all devices.
             </p>
             <div className="flex gap-2 justify-center">
               <button
