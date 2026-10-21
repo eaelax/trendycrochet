@@ -20,14 +20,26 @@ export default function BestSellersClient({ initialPatterns }: BestSellersClient
             return parsed;
           }
         }
-      } catch {
-        // fallback
-      }
+      } catch {}
     }
     return initialPatterns;
   });
 
   useEffect(() => {
+    // 1. Fetch live server data so other devices instantly see updates
+    fetch('/api/patterns?t=' + Date.now())
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.patterns && Array.isArray(data.patterns)) {
+          setPatterns(data.patterns);
+          try {
+            localStorage.setItem('trendy_crochet_patterns', JSON.stringify(data.patterns));
+          } catch {}
+        }
+      })
+      .catch(() => {});
+
+    // 2. Synchronize across local tabs/windows
     const syncFromStorage = () => {
       try {
         const saved = localStorage.getItem('trendy_crochet_patterns');
@@ -37,12 +49,8 @@ export default function BestSellersClient({ initialPatterns }: BestSellersClient
             setPatterns(parsed);
           }
         }
-      } catch {
-        // ignore
-      }
+      } catch {}
     };
-
-    syncFromStorage();
 
     window.addEventListener('storage', syncFromStorage);
     window.addEventListener('crochet_patterns_updated', syncFromStorage);
