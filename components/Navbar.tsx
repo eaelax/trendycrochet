@@ -5,8 +5,8 @@ import Link from 'next/link';
 export default function Navbar() {
   return (
     <header className="w-full bg-white sticky top-0 z-40 border-b border-stone-100">
-      {/* Top Announcement Bar */}
-      <div className="w-full bg-[#EBE7DF] text-stone-800 py-1 px-3 text-center text-[10px] sm:text-[11px] font-medium tracking-wide">
+      {/* Top Announcement Bar: Added a few pixels of height */}
+      <div className="w-full bg-[#EBE7DF] text-stone-800 py-2 sm:py-2.5 px-3 text-center text-[10px] sm:text-[11px] font-medium tracking-wide flex items-center justify-center min-h-[34px]">
         <span>100% Free Instant Downloads · Verified Printable PDF Guides</span>
       </div>
 
@@ -24,25 +24,25 @@ export default function Navbar() {
           <nav className="flex items-center justify-center gap-4 pt-2 text-[11px] text-stone-900 font-medium tracking-normal w-full">
             <Link
               href="/#patterns"
-              className="text-stone-900 font-normal hover:text-[#E65F43] whitespace-nowrap transition-colors"
+              className="text-stone-900 font-normal whitespace-nowrap"
             >
               Pattern
             </Link>
             <Link
               href="/best-sellers"
-              className="text-stone-900 font-normal hover:text-[#E65F43] whitespace-nowrap transition-colors"
+              className="text-stone-900 font-normal whitespace-nowrap"
             >
               Best sellers
             </Link>
             <Link
               href="/#patterns"
-              className="text-stone-900 font-normal hover:text-[#E65F43] whitespace-nowrap transition-colors"
+              className="text-stone-900 font-normal whitespace-nowrap"
             >
               Latest arrivals
             </Link>
             <Link
               href="/#steps"
-              className="text-stone-900 font-normal hover:text-[#E65F43] whitespace-nowrap transition-colors"
+              className="text-stone-900 font-normal whitespace-nowrap"
             >
               How it works
             </Link>
@@ -53,10 +53,10 @@ export default function Navbar() {
         <div className="hidden sm:grid sm:grid-cols-3 items-center h-20">
           {/* Left Side: Pattern, Best sellers */}
           <nav className="flex items-center gap-6 text-xs text-stone-900 font-medium tracking-normal">
-            <Link href="/#patterns" className="text-stone-900 font-normal hover:text-[#E65F43] transition-colors">
+            <Link href="/#patterns" className="text-stone-900 font-normal">
               Pattern
             </Link>
-            <Link href="/best-sellers" className="text-stone-900 font-normal hover:text-[#E65F43] transition-colors">
+            <Link href="/best-sellers" className="text-stone-900 font-normal">
               Best sellers
             </Link>
           </nav>
@@ -73,10 +73,10 @@ export default function Navbar() {
 
           {/* Right Side: Latest arrivals, How it works */}
           <nav className="flex items-center justify-end gap-6 text-xs text-stone-900 font-medium tracking-normal">
-            <Link href="/#patterns" className="text-stone-900 font-normal hover:text-[#E65F43] transition-colors">
+            <Link href="/#patterns" className="text-stone-900 font-normal">
               Latest arrivals
             </Link>
-            <Link href="/#steps" className="text-stone-900 font-normal hover:text-[#E65F43] transition-colors">
+            <Link href="/#steps" className="text-stone-900 font-normal">
               How it works
             </Link>
           </nav>
