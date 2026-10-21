@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, FileText, Download, Star } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Star, ShoppingBag } from 'lucide-react';
 import { Pattern } from '@/lib/types';
 import DownloadSteps from './DownloadSteps';
 
@@ -26,24 +26,25 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
   const rawUrl = cleanImageUrl(pattern.image_url);
   const displayImage = imageError ? FALLBACK_IMAGE : rawUrl;
   const reviewCount = pattern.reviews_count ?? 128;
+  const gumroadLink = pattern.gumroad_url?.trim() || `https://gumroad.com/l/${pattern.slug}`;
 
   return (
     <div className="px-4 py-4 sm:py-6 max-w-5xl mx-auto">
-      {/* Back navigation */}
+      {/* Back navigation - Zero hover effect */}
       <div className="mb-3 sm:mb-6">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700 hover:text-[#E65F43] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-700"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to patterns</span>
         </Link>
       </div>
 
-      {/* 2-Column Container */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start max-w-5xl mx-auto">
-        {/* LEFT COLUMN: Shrunken height on mobile screens with zero hover effects */}
-        <div className="relative w-full h-[220px] sm:h-auto sm:aspect-[3/4] rounded-2xl overflow-hidden bg-stone-100 border border-stone-200/60 shadow-sm">
+      {/* 2-Column Container - items-stretch to align left and right column heights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 items-stretch max-w-5xl mx-auto">
+        {/* LEFT COLUMN: Shrunken height to fit the exact height of the right data container */}
+        <div className="relative w-full h-[220px] sm:h-[260px] md:h-full min-h-[220px] md:min-h-0 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200/60 shadow-sm">
           <Image
             src={displayImage}
             alt={pattern.title}
@@ -58,7 +59,7 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
         </div>
 
         {/* RIGHT COLUMN: Pattern details & download action */}
-        <div className="flex flex-col h-full gap-5 sm:gap-6">
+        <div className="flex flex-col justify-between gap-5 sm:gap-6 h-full">
           <div>
             {/* 1. Category & Difficulty Tags */}
             <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -128,39 +129,27 @@ export default function PatternDetailClient({ pattern }: PatternDetailClientProp
             </div>
           </div>
 
-          {/* CTA Box */}
-          <div className="bg-[#FAF9F5] border border-stone-200/80 rounded-2xl p-4 sm:p-6 space-y-4">
-            <div>
-              <div className="text-xs uppercase font-extrabold tracking-widest text-[#E65F43] mb-1">
-                Free Community Access
-              </div>
-              <div className="text-xs text-stone-600">
-                Verify with our sponsor to download the complete PDF guide at no cost.
-              </div>
-            </div>
-
+          {/* Action Buttons: Zero hover effects */}
+          <div className="bg-[#FAF9F5] border border-stone-200/80 rounded-2xl p-4 sm:p-5 space-y-3">
             <a
               href={pattern.cpa_locker_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-3.5 px-4 bg-[#E65F43] hover:bg-[#d04e33] text-white text-xs sm:text-sm font-bold rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-sm transition-colors cursor-pointer"
+              className="w-full py-3.5 px-4 bg-[#E65F43] text-white text-xs sm:text-sm font-bold rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-sm cursor-pointer"
             >
               <Download className="w-4 h-4 stroke-[3]" />
-              <span>DOWNLOAD PATTERN NOW (FREE)</span>
+              <span>DOWNLOAD PDF FREE</span>
             </a>
 
-            {pattern.gumroad_url && (
-              <div className="pt-2 border-t border-stone-200 text-center">
-                <a
-                  href={pattern.gumroad_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-stone-500 hover:text-stone-800 text-xs inline-flex items-center gap-1.5 font-medium underline"
-                >
-                  <span>Or skip verification and purchase on Gumroad ($2.00)</span>
-                </a>
-              </div>
-            )}
+            <a
+              href={gumroadLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3.5 px-4 bg-stone-900 text-white text-xs sm:text-sm font-bold rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-sm cursor-pointer"
+            >
+              <ShoppingBag className="w-4 h-4 stroke-[2.5]" />
+              <span>BUY PDF NOW $2.00</span>
+            </a>
           </div>
         </div>
       </div>
